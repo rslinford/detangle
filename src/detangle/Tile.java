@@ -8,9 +8,11 @@ import java.util.Arrays;
  */
 class Tile {
 
-    static final int NODE_QTY = 12;
-    private final int[] connections;
     private static int NEXT_ID = 0;
+    static final int SIDE_QTY = 6;
+    static final int NODE_QTY = SIDE_QTY * 2;
+    final int[] connections;
+    private int rotation = 0;
     final int id;
 
     Tile(int[] connections) {
@@ -19,11 +21,32 @@ class Tile {
         NEXT_ID++;
     }
 
+    void rotate(final int n) {
+        rotation = (rotation + n) % SIDE_QTY;
+    }
+
+    void setRotation(int rotation) {
+        this.rotation = rotation  % SIDE_QTY;
+    }
+    
+    int getRotation() {
+        return rotation;
+    }
+
+    void resetRotation() {
+        rotation = 0;
+    }
+
+    private int adjustNode(final int node) {
+        return (rotation * 2 + node) % Tile.NODE_QTY;
+    }
+
     /** Mapping function for node connections within a given tile. */
-    int connectingNode(int node) {
+    int connectingNode(final int node) {
+        final int aNode = adjustNode(node);
         // Follow the path on the adjacent tile.
         for (int i = 0; i < NODE_QTY; i++) {
-            if (node == connections[i]) {
+            if (aNode == connections[i]) {
                 boolean even = i % 2 == 0;
                 if (even) {
                     return connections[i + 1];

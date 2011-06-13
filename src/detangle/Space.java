@@ -6,10 +6,10 @@ package detangle;
  */
 public class Space {
 
-    SpaceState state = SpaceState.Wall;
-    int marker = -1;
     Tile tile = null;
     final Coordinates pos;
+    State state = State.Wall;
+    int marker = -1;
 
     Space(final Coordinates pos) {
         this.pos = pos;
@@ -17,13 +17,12 @@ public class Space {
 
     @Override
     public String toString() {
-        return tile + " " + pos + " marker: " + marker;
+        String t = (tile == null) ? "x]" : tile.toString();
+        return t + " " + pos + " marker: " + marker;
     }
 
     void traverse() {
-        System.out.print("  traverse: " + marker + " -> ");
         marker = tile.connectingNode(marker);
-        System.out.println(marker + " direction: " + direction(marker));
     }
 
     void matchMarker(final Space otherSpace) {
@@ -55,7 +54,7 @@ public class Space {
         }
     }
 
-    enum SpaceState {
+    enum State {
 
         Playable, Played, Wall
     }

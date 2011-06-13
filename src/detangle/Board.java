@@ -1,7 +1,8 @@
 package detangle;
 
 import detangle.Space.Coordinates;
-import detangle.Space.SpaceState;
+import detangle.Space.State;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,14 +13,14 @@ import java.util.Map;
 class Board {
 
     private final Map<Space.Coordinates, Space> board = new HashMap();
-    private final TileIterator tiles = new TileIterator();
+    private final TileStack tiles = new TileStack();
     private final Space.Coordinates startPos = new Space.Coordinates(0, 0);
     private Tile swapTile;
     Space current;
     Space adjacent;
 
     Board() {
-        this.swapTile = tiles.next();
+        this.swapTile = tiles.pop();
         this.current = locateSpace(startPos);
         this.adjacent = locateSpace(calculateAdjacentCoordinates(current));
         this.adjacent.matchMarker(this.current);
@@ -29,22 +30,22 @@ class Board {
         switch (space.marker) {
             case 0:
             case 1:
-                return new Space.Coordinates(space.pos.x, space.pos.y - 1);
+                return new Space.Coordinates(space.pos.x, space.pos.y + 1);
             case 2:
             case 3:
-                return new Space.Coordinates(space.pos.x + 1, space.pos.y - 0.5f);
+                return new Space.Coordinates(space.pos.x + 1, space.pos.y + 0.5f);
             case 4:
             case 5:
-                return new Space.Coordinates(space.pos.x + 1, space.pos.y + 0.5f);
+                return new Space.Coordinates(space.pos.x + 1, space.pos.y - 0.5f);
             case 6:
             case 7:
-                return new Space.Coordinates(space.pos.x, space.pos.y + 1);
+                return new Space.Coordinates(space.pos.x, space.pos.y - 1);
             case 8:
             case 9:
-                return new Space.Coordinates(space.pos.x - 1, space.pos.y + 0.5f);
+                return new Space.Coordinates(space.pos.x - 1, space.pos.y - 0.5f);
             case 10:
             case 11:
-                return new Space.Coordinates(space.pos.x - 1, space.pos.y - 0.5f);
+                return new Space.Coordinates(space.pos.x - 1, space.pos.y + 0.5f);
             default:
                 throw new IllegalArgumentException("Space token(" + space.marker + ")");
         }
@@ -56,15 +57,16 @@ class Board {
             space = new Space(pos);
             board.put(pos, space);
             if ((pos.x == startPos.x) && (pos.y == startPos.y)) {
-                space.state = SpaceState.Wall;
+                space.state = State.Wall;
                 space.marker = 0;
             } else if (outOfBound(pos)) {
-                space.state = SpaceState.Wall;
+                space.state = State.Wall;
             } else {
-                space.state = SpaceState.Playable;
-                space.tile = tiles.next();
+                space.state = State.Playable;
+                space.tile = tiles.pop();
             }
         }
+
         return space;
     }
 
@@ -75,32 +77,70 @@ class Board {
         adjacent.matchMarker(current);
     }
 
+    private void retreate() {
+        adjacent = current;
+        adjacent.traverse();
+        current = locateSpace(calculateAdjacentCoordinates(adjacent));
+        current.matchMarker(adjacent);
+    }
+
     void play() {
-        if (adjacent.state != SpaceState.Playable) {
+        if (adjacent.state != State.Playable) {
             throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
         }
 
-        adjacent.state = SpaceState.Played;
+        adjacent.state = State.Played;
         advance();
     }
 
     void flow() {
-        if (adjacent.state != SpaceState.Played) {
+        if (adjacent.state != State.Played) {
             throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
         }
 
         advance();
     }
 
-    private boolean outOfBound(Coordinates pos) {
-        if (Math.abs(pos.x) > 3) {
-            return true;
-        }
-        
-        if (Math.abs(pos.y) > Math.abs(3 - (0.5f * pos.x))) {
+    private boolean outOfBound(final Coordinates pos) {
+        final int x = Math.abs((int) pos.x);
+        if (x > 3) {
             return true;
         }
 
+        final float y = Math.abs(pos.y);
+
+        switch (x) {
+            case 0:
+                return y > 3;
+            case 1:
+                return y > 2.5;
+            case 2:
+                return y > 2;
+            case 3:
+                return y > 1.5;
+        }
+
         return false;
+    }
+
+    void putTileBack(final Coordinates pos) {
+        Space space = board.remove(pos);
+        tiles.unpop();
+
+        // remove once correctness is verified
+        if (!Arrays.equals(tiles.peek().connections, space.tile.connections)) {
+            throw new IllegalStateException("Put back wrong tile " + tiles.peek() + ". Tossing " + space.tile.connections);
+        }
+    }
+
+    /** Undo play on adjacentPos and set its rotation for another try. */
+    void undoPlay(final Coordinates currentPos, final int currentMarker,
+            final Coordinates adjacentPos, final int rotation) {
+        current = locateSpace(currentPos);
+        current.marker = currentMarker;
+        adjacent = locateSpace(adjacentPos);
+        adjacent.marker = Tile.adjacentNode(currentMarker);
+        adjacent.tile.setRotation(rotation);
+        adjacent.state = Space.State.Playable;
     }
 }
