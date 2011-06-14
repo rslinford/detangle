@@ -20,18 +20,22 @@ public class GameDriver {
         long gamesCompleted = 0;
         Stack<Event> active = new Stack();
         Map<Integer, List<Event>> goodGames = new TreeMap();
-        private final static int GOOD_GAME_THRESHOLD = 2000;
+        private final static int GOOD_GAME_THRESHOLD = 1000;
 
         void add(final Event.Type type, final Space.Coordinates pos, final int marker, final int rotation, final int score) {
             active.push(new Event(type, pos, marker, rotation, score));
         }
 
-        String toStringHuman() {
+        String toStringDetail() {
             StringBuilder sb = new StringBuilder();
             for (Event m : active) {
                 sb.append(m.type).append(m.pos).append(" r(").append(m.rotation).append(") s(").append(m.score).append("); ");
             }
             return sb.toString();
+        }
+        
+        String toStringSummary() {
+            return gamesCompleted + "] " + rotationSequence() + " length(" + pathLength() + ")" + " score(" + score() + ")";
         }
 
         boolean inProgress() {
@@ -216,19 +220,17 @@ public class GameDriver {
             record.add(Event.Type.End, board.adjacent.pos, board.adjacent.marker, 0, record.score());
 
             if (verbose) {
-                System.out.println();
                 System.out.println(board.adjacent + " (end)");
-                System.out.println(record.gamesCompleted + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.pathLength() + ")");
-                System.out.println("Path: " + record.toStringHuman());
+                System.out.println(record.toStringSummary());
+                System.out.println(record.toStringDetail());
                 System.out.println();
             }
-
-            if (record.isHighScore()) {
-                System.out.println(record.gamesCompleted + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.pathLength() + ")");
-                System.out.println("Path: " + record.toStringHuman());
+            else if (record.isHighScore()) {
+                System.out.println(record.toStringSummary());
+                System.out.println(record.toStringDetail());
                 System.out.println();
-            } else if ((record.gamesCompleted % 2500000) == 0) {
-                System.out.println(record.gamesCompleted + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.pathLength() + ")");
+            } else if ((record.gamesCompleted % 10_000_000) == 0) {
+                System.out.println(record.toStringSummary());
             }
         }
     }

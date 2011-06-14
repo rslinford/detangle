@@ -2,7 +2,6 @@ package detangle;
 
 import detangle.Space.Coordinates;
 import detangle.Space.State;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,13 +76,6 @@ class Board {
         adjacent.matchMarker(current);
     }
 
-    private void retreate() {
-        adjacent = current;
-        adjacent.traverse();
-        current = locateSpace(calculateAdjacentCoordinates(adjacent));
-        current.matchMarker(adjacent);
-    }
-
     void play() {
 //        if (adjacent.state != State.Playable) {
 //            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
@@ -124,13 +116,8 @@ class Board {
     }
 
     void putTileBack(final Coordinates pos) {
-        Space space = board.remove(pos);
+        board.remove(pos);
         tiles.unpop();
-
-        // remove once correctness is verified
-        if (!Arrays.equals(tiles.peek().connections, space.tile.connections)) {
-            throw new IllegalStateException("Put back wrong tile " + tiles.peek() + ". Tossing " + space.tile.connections);
-        }
     }
 
     /** Undo play on adjacentPos and set its rotation for another try. */
