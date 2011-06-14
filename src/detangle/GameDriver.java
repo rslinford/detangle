@@ -17,10 +17,10 @@ public class GameDriver {
     static class Record {
 
         int highScore = 0;
-        long gameCount = 0;
+        long gamesCompleted = 0;
         Stack<Event> active = new Stack();
         Map<Integer, List<Event>> goodGames = new TreeMap();
-        private final static int GOOD_GAME_THRESHOLD = 1000;
+        private final static int GOOD_GAME_THRESHOLD = 2000;
 
         void add(final Event.Type type, final Space.Coordinates pos, final int marker, final int rotation, final int score) {
             active.push(new Event(type, pos, marker, rotation, score));
@@ -45,8 +45,17 @@ public class GameDriver {
             }
 
             for (Event m : active) {
-                if (m.rotation != (Tile.SIDE_QTY - 1)) {
-                    return false;
+                switch (m.type) {
+                    case Play:
+                    case Flow:
+                        if (m.rotation < (Tile.SIDE_QTY - 1)) {
+                            return false;
+                        }
+                        break;
+
+                    case Start:
+                    case End:
+                        break;
                 }
             }
 
@@ -54,32 +63,54 @@ public class GameDriver {
         }
 
         void rewind(Board board) {
-            gameCount++;
-            // copy record before rewind
+            if (active.peek().type != Event.Type.End) {
+                throw new IllegalStateException("Rewinding when last event is " + active.peek().type);
+            }
+
+            gamesCompleted++;
+
             if (score() > GOOD_GAME_THRESHOLD) {
                 goodGames.put(score(), new ArrayList(active));
             }
-            
+
             if (score() > highScore) {
                 highScore = score();
             }
 
+            rewind:
             while (active.size() > 1) {
-                Event e1;
-                do {
-                    e1 = active.pop();
-                } while (e1.type != Event.Type.Play);
+                switch (active.peek().type) {
+                    case End:
+                    case Flow:
+                        active.pop();
+                        break;
+                    case Play:
+                        Event played = active.pop();
+                        final int r = played.rotation + 1;
 
-                final int r = e1.rotation + 1;
-
-                if (r == Tile.SIDE_QTY) {
-                    board.putTileBack(e1.pos);
-                } else {
-                    Event e2 = active.peek();
-                    board.undoPlay(e2.pos, e2.marker, e1.pos, r);
-                    break;
+                        if (r == Tile.SIDE_QTY) {
+                            if (active.peek().type == Event.Type.Start) {
+                                break rewind;
+                            }
+                            board.putTileBack(played.pos);
+                        } else {
+                            board.undoPlay(active.peek().pos, active.peek().marker, played.pos, r);
+                            break rewind;
+                        }
+                        break;
+                    case Start:
+                    default:
+                        throw new IllegalStateException("Rewound down to " + active.peek().type + " size: " + active.size());
                 }
             }
+        }
+        
+        int pathLength() {
+            int length = active.size() - 1;
+            if (active.peek().type == Event.Type.End) {
+                length--;
+            }
+            return length < 0 ? 0 : length;
         }
 
         @Override
@@ -98,8 +129,19 @@ public class GameDriver {
         private String rotationSequence() {
             StringBuilder sb = new StringBuilder();
             for (Event m : active) {
-                if (m.type == Event.Type.Play) {
-                    sb.append(m.rotation);
+                switch (m.type) {
+                    case Flow:
+                        sb.append('-');
+                        break;
+                    case Play:
+                        sb.append(m.rotation);
+                        break;
+                    case Start:
+                        sb.append(">");
+                        break;
+                    case End:
+                        sb.append("|");
+                        break;
                 }
             }
             return sb.toString();
@@ -137,10 +179,14 @@ public class GameDriver {
     }
 
     private void grind() {
+        final boolean verbose = false;
         Board board = new Board();
         Record record = new Record();
         record.add(Event.Type.Start, board.current.pos, board.current.marker, 0, 0);
-//        System.out.println(board.current + " (start)");
+
+        if (verbose) {
+            System.out.println(board.current + " (start)");
+        }
 
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
@@ -150,14 +196,18 @@ public class GameDriver {
             while (board.adjacent.state == State.Playable) {
                 final Space playable = board.adjacent;
                 int p = 1;
-//                System.out.println(playable + " (playing) +" + p);
+                if (verbose) {
+                    System.out.println(playable + " (playing) +" + p);
+                }
 
                 board.play();
                 record.add(Event.Type.Play, playable.pos, playable.marker, playable.tile.getRotation(), record.score() + p);
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;
                     p++;
-//                    System.out.println(flowable + " (flowing) +" + p);
+                    if (verbose) {
+                        System.out.println(flowable + " (flowing) +" + p);
+                    }
                     board.flow();
                     record.add(Event.Type.Flow, flowable.pos, flowable.marker, flowable.tile.getRotation(), record.score() + p);
                 }
@@ -165,15 +215,20 @@ public class GameDriver {
 
             record.add(Event.Type.End, board.adjacent.pos, board.adjacent.marker, 0, record.score());
 
-//            System.out.println(board.adjacent + " (end)");
-            if (record.isHighScore()) {
-                System.out.println(record.highScore + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.size() + ")");
+            if (verbose) {
+                System.out.println();
+                System.out.println(board.adjacent + " (end)");
+                System.out.println(record.gamesCompleted + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.pathLength() + ")");
                 System.out.println("Path: " + record.toStringHuman());
                 System.out.println();
             }
-            else if ((record.gameCount % 100000) == 0) {
-                System.out.println(record.highScore + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.size() + ")");
+
+            if (record.isHighScore()) {
+                System.out.println(record.gamesCompleted + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.pathLength() + ")");
+                System.out.println("Path: " + record.toStringHuman());
                 System.out.println();
+            } else if ((record.gamesCompleted % 2500000) == 0) {
+                System.out.println(record.gamesCompleted + "] " + record.rotationSequence() + " score(" + record.score() + ") length(" + record.pathLength() + ")");
             }
         }
     }

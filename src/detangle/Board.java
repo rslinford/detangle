@@ -85,18 +85,18 @@ class Board {
     }
 
     void play() {
-        if (adjacent.state != State.Playable) {
-            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
-        }
+//        if (adjacent.state != State.Playable) {
+//            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
+//        }
 
         adjacent.state = State.Played;
         advance();
     }
 
     void flow() {
-        if (adjacent.state != State.Played) {
-            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
-        }
+//        if (adjacent.state != State.Played) {
+//            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
+//        }
 
         advance();
     }

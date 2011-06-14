@@ -37,21 +37,25 @@ class Tile {
         rotation = 0;
     }
 
-    private int adjustNode(final int node) {
-        return (rotation * 2 + node) % Tile.NODE_QTY;
+    private int adjustForInternal(final int externalNode) {
+        return ((Tile.NODE_QTY + externalNode) - (rotation * 2)) % Tile.NODE_QTY;
+    }
+    
+    private int adjustForExternal(final int internalNode) {
+        return (internalNode + (rotation * 2)) % Tile.NODE_QTY;
     }
 
     /** Mapping function for node connections within a given tile. */
     int connectingNode(final int node) {
-        final int aNode = adjustNode(node);
+        final int internalNode = adjustForInternal(node);
         // Follow the path on the adjacent tile.
         for (int i = 0; i < NODE_QTY; i++) {
-            if (aNode == connections[i]) {
+            if (internalNode == connections[i]) {
                 boolean even = i % 2 == 0;
                 if (even) {
-                    return connections[i + 1];
+                    return adjustForExternal(connections[i + 1]);
                 } else {
-                    return connections[i - 1];
+                    return adjustForExternal(connections[i - 1]);
                 }
             }
         }
