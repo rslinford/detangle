@@ -59,6 +59,6 @@ public class Space {
 
     enum State {
 
-        Playable, Played, Wall
+        Playable, Played, Wall, Covered
     }
 }

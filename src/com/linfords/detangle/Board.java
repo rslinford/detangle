@@ -16,55 +16,63 @@ class Board {
 
     Board() {
         this.swapTile = tiles.pop();
-        this.current = createStartingSpace();
+        wipeSpaces();
+        this.current = initStartingSpace();
         this.adjacent = locateAdjacent(current);
         this.adjacent.matchNodeMarkers(current);
+    }
+
+    private void wipeSpaces() {
+        for (int x = 0; x < board.length; x++) {
+            for (int y = 0; y < board[x].length; y++) {
+                final Space space = new Space(x, y);
+                board[x][y] = space;
+                if (outOfBounds(x, y)) {
+                    space.state = State.Wall;
+                } else {
+                    space.state = State.Covered;
+                }
+            }
+        }
     }
 
     private Space locateAdjacent(final Space space) {
         switch (space.nodeMarker) {
             case 0:
             case 1:
-                return locateSpace(space.posX, space.posY + 2);
+                return prepareSpace(space.posX, space.posY + 2);
             case 2:
             case 3:
-                return locateSpace(space.posX + 2, space.posY + 1);
+                return prepareSpace(space.posX + 2, space.posY + 1);
             case 4:
             case 5:
-                return locateSpace(space.posX + 2, space.posY - 1);
+                return prepareSpace(space.posX + 2, space.posY - 1);
             case 6:
             case 7:
-                return locateSpace(space.posX, space.posY - 2);
+                return prepareSpace(space.posX, space.posY - 2);
             case 8:
             case 9:
-                return locateSpace(space.posX - 2, space.posY - 1);
+                return prepareSpace(space.posX - 2, space.posY - 1);
             case 10:
             case 11:
-                return locateSpace(space.posX - 2, space.posY + 1);
+                return prepareSpace(space.posX - 2, space.posY + 1);
             default:
                 throw new IllegalArgumentException("Space token(" + space.nodeMarker + ")");
         }
     }
 
-    private Space createStartingSpace() {
-        Space space = new Space(Space.OFFSET, Space.OFFSET);
-        board[Space.OFFSET][Space.OFFSET] = space;
+    private Space initStartingSpace() {
+        final Space space = board[Space.OFFSET][Space.OFFSET];
         space.state = State.Wall;
         space.nodeMarker = 0;
         return space;
     }
 
-    private Space locateSpace(final int posX, final int posY) {
-        Space space = board[posX][posY];
-        if (space == null) {
-            space = new Space(posX, posY);
-            board[posX][posY] = space;
-            if (outOfBounds(posX, posY)) {
-                space.state = State.Wall;
-            } else {
-                space.state = State.Playable;
-                space.tile = tiles.pop();
-            }
+    private Space prepareSpace(final int posX, final int posY) {
+        final Space space = board[posX][posY];
+        if (space.state == State.Covered) {
+            space.tile = tiles.pop();
+            space.state = State.Playable;
         }
 
         return space;
@@ -117,16 +125,18 @@ class Board {
     }
 
     void putTileBack(final int posX, final int posY) {
-        board[posX][posY] = null;
+        final Space space = board[posX][posY];
+        space.state = State.Covered;
+        space.tile = null;
         tiles.unpop();
     }
 
     /** Undo play on adjacentPos and set its rotation for another try. */
     void undoPlay(final int currentPosX, final int currentPosY, final int currentMarker,
             final int adjacentPosX, final int adjacentPosY, final int rotation) {
-        current = locateSpace(currentPosX, currentPosY);
+        current = board[currentPosX][currentPosY];
         current.nodeMarker = currentMarker;
-        adjacent = locateSpace(adjacentPosX, adjacentPosY);
+        adjacent = board[adjacentPosX][adjacentPosY];
         adjacent.nodeMarker = Tile.adjacentNode(currentMarker);
         adjacent.tile.setRotation(rotation);
         adjacent.state = Space.State.Playable;

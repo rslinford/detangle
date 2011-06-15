@@ -7,20 +7,20 @@ import com.linfords.detangle.Space.State;
  * @author Scott
  */
 public class GameDriver {
-    
+
     public final static boolean TEST_RUN = false;
     public final static boolean VERBOSE = false;
-    
+
     static class Record {
-        
+
         int highScore = 0;
         long gamesCompleted = 0;
         EventStack active = new EventStack();
-        
+
         void add(final Event.Type type, final int posX, final int posY, final int marker, final int rotation, final int score) {
             active.push(new Event(type, posX, posY, marker, rotation, score));
         }
-        
+
         String toStringDetail() {
             StringBuilder sb = new StringBuilder();
             for (Event m : active) {
@@ -28,21 +28,21 @@ public class GameDriver {
             }
             return sb.toString();
         }
-        
+
         String toStringSummary() {
             return gamesCompleted + "] " + rotationSequence() + " length(" + pathLength() + ")" + " score(" + score() + ")";
         }
-        
+
         boolean inProgress() {
             return active.peek().type != Event.Type.End;
         }
-        
+
         boolean isLastGame() {
             // Have to play the game out to know for sure.
             if (inProgress()) {
                 return false;
             }
-            
+
             for (Event m : active) {
                 switch (m.type) {
                     case Play:
@@ -51,45 +51,46 @@ public class GameDriver {
                             return false;
                         }
                         break;
-                    
+
                     case Start:
                     case End:
                         break;
                 }
             }
-            
+
             return true;
         }
-        
+
         void rewind(Board board) {
             if (TEST_RUN) {
                 validateRecord();
             }
-            
+
             gamesCompleted++;
-            
+
             if (score() > highScore) {
                 highScore = score();
             }
-            
+
             rewind:
             while (active.size() > 1) {
-                switch (active.peek().type) {
+                final Event e = active.pop();
+                switch (e.type) {
                     case End:
                     case Flow:
-                        active.pop();
+                        // Nothing to do other than the pop that has already been performed.
                         break;
                     case Play:
-                        Event played = active.pop();
-                        final int r = played.rotation + 1;
-                        
+                        //Event played = active.pop();
+                        final int r = e.rotation + 1;
+
                         if (r == Tile.SIDE_QTY) {
                             if (active.peek().type == Event.Type.Start) {
                                 break rewind;
                             }
-                            board.putTileBack(played.posX, played.posY);
+                            board.putTileBack(e.posX, e.posY);
                         } else {
-                            board.undoPlay(active.peek().posX, active.peek().posY, active.peek().marker, played.posX, played.posY, r);
+                            board.undoPlay(active.peek().posX, active.peek().posY, active.peek().marker, e.posX, e.posY, r);
                             break rewind;
                         }
                         break;
@@ -99,7 +100,7 @@ public class GameDriver {
                 }
             }
         }
-        
+
         int pathLength() {
             int length = active.size() - 1;
             if (active.peek().type == Event.Type.End) {
@@ -107,20 +108,20 @@ public class GameDriver {
             }
             return length < 0 ? 0 : length;
         }
-        
+
         @Override
         public String toString() {
             return active.toString();
         }
-        
+
         private int score() {
             return active.peek().score;
         }
-        
+
         private int size() {
             return active.size();
         }
-        
+
         private String rotationSequence() {
             StringBuilder sb = new StringBuilder();
             for (Event m : active) {
@@ -141,11 +142,12 @@ public class GameDriver {
             }
             return sb.toString();
         }
-        
+
         private boolean isHighScore() {
             return score() > highScore;
         }
-        
+
+        /** Validate results against a known data set: TILE_SET_TEST_DATA */
         private void validateRecord() {
             switch ((int) gamesCompleted) {
                 case 549:
@@ -157,28 +159,28 @@ public class GameDriver {
             }
         }
     }
-    
+
     private void grind() {
         Board board = new Board();
         Record record = new Record();
         record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0);
-        
+
         if (VERBOSE) {
             System.out.println(board.current + " (start)");
         }
-        
+
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
                 record.rewind(board);
             }
-            
+
             while (board.adjacent.state == State.Playable) {
                 final Space playable = board.adjacent;
                 int p = 1;
                 if (VERBOSE) {
                     System.out.println(playable + " (playing) +" + p);
                 }
-                
+
                 board.play();
                 record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p);
                 while (board.adjacent.state == State.Played) {
@@ -191,9 +193,9 @@ public class GameDriver {
                     record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p);
                 }
             }
-            
+
             record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score());
-            
+
             if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
                 System.out.println(record.toStringSummary());
@@ -208,7 +210,7 @@ public class GameDriver {
             }
         }
     }
-    
+
     public static void main(String[] args) {
         new GameDriver().grind();
     }
