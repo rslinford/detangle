@@ -203,7 +203,7 @@ public class GameDriver {
                 System.out.println(record.toStringSummary());
                 System.out.println(record.toStringDetail());
                 System.out.println();
-            } else if ((record.gamesCompleted % 25_000_000) == 0) {
+            } else if ((record.gamesCompleted % 1) == 0) {
                 System.out.println(record.toStringSummary());
             }
         }

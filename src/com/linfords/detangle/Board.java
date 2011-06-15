@@ -13,14 +13,13 @@ class Board {
 
     private final Map<Space.Coordinates, Space> board = new HashMap();
     private final TileStack tiles = new TileStack();
-    private final Space.Coordinates startPos = new Space.Coordinates(0, 0);
     private Tile swapTile;
     Space current;
     Space adjacent;
 
     Board() {
         this.swapTile = tiles.pop();
-        this.current = locateSpace(startPos);
+        this.current = createStartingSpace();
         this.adjacent = locateSpace(calculateAdjacentCoordinates(current));
         this.adjacent.matchMarker(this.current);
     }
@@ -110,11 +109,11 @@ class Board {
         switch (x) {
             case 0:
                 return y > 6;
-            case 1:
-                return y > 5;
             case 2:
+                return y > 5;
+            case 4:
                 return y > 4;
-            case 3:
+            case 6:
                 return y > 3;
         }
 
