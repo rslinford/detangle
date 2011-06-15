@@ -1,4 +1,4 @@
-package detangle;
+package com.linfords.detangle;
 
 /**
  *
@@ -61,10 +61,10 @@ public class Space {
 
     static class Coordinates {
 
-        final float x;
-        final float y;
+        final int x;
+        final int y;
 
-        Coordinates(final float x, final float y) {
+        Coordinates(final int x, final int y) {
             this.x = x;
             this.y = y;
         }
@@ -85,7 +85,7 @@ public class Space {
 
         @Override
         public int hashCode() {
-            return Float.valueOf(x).hashCode() + Float.valueOf(y).hashCode();
+            return Integer.valueOf(x).hashCode() + Integer.valueOf(y).hashCode();
         }
 
         @Override

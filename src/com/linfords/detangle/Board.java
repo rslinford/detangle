@@ -1,7 +1,7 @@
-package detangle;
+package com.linfords.detangle;
 
-import detangle.Space.Coordinates;
-import detangle.Space.State;
+import com.linfords.detangle.Space.Coordinates;
+import com.linfords.detangle.Space.State;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,25 +29,34 @@ class Board {
         switch (space.marker) {
             case 0:
             case 1:
-                return new Space.Coordinates(space.pos.x, space.pos.y + 1);
+                return new Space.Coordinates(space.pos.x, space.pos.y + 2);
             case 2:
             case 3:
-                return new Space.Coordinates(space.pos.x + 1, space.pos.y + 0.5f);
+                return new Space.Coordinates(space.pos.x + 2, space.pos.y + 1);
             case 4:
             case 5:
-                return new Space.Coordinates(space.pos.x + 1, space.pos.y - 0.5f);
+                return new Space.Coordinates(space.pos.x + 2, space.pos.y - 1);
             case 6:
             case 7:
-                return new Space.Coordinates(space.pos.x, space.pos.y - 1);
+                return new Space.Coordinates(space.pos.x, space.pos.y - 2);
             case 8:
             case 9:
-                return new Space.Coordinates(space.pos.x - 1, space.pos.y - 0.5f);
+                return new Space.Coordinates(space.pos.x - 2, space.pos.y - 1);
             case 10:
             case 11:
-                return new Space.Coordinates(space.pos.x - 1, space.pos.y + 0.5f);
+                return new Space.Coordinates(space.pos.x - 2, space.pos.y + 1);
             default:
                 throw new IllegalArgumentException("Space token(" + space.marker + ")");
         }
+    }
+    
+    private Space createStartingSpace() {
+        Coordinates pos = new Coordinates(0, 0);
+        Space space = new Space(pos);
+        board.put(pos, space);
+        space.state = State.Wall;
+        space.marker = 0;
+        return space;
     }
 
     private Space locateSpace(Space.Coordinates pos) {
@@ -55,10 +64,7 @@ class Board {
         if (space == null) {
             space = new Space(pos);
             board.put(pos, space);
-            if ((pos.x == startPos.x) && (pos.y == startPos.y)) {
-                space.state = State.Wall;
-                space.marker = 0;
-            } else if (outOfBound(pos)) {
+            if (outOfBound(pos)) {
                 space.state = State.Wall;
             } else {
                 space.state = State.Playable;
@@ -77,39 +83,39 @@ class Board {
     }
 
     void play() {
-//        if (adjacent.state != State.Playable) {
-//            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
-//        }
+        if (adjacent.state != State.Playable) {
+            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
+        }
 
         adjacent.state = State.Played;
         advance();
     }
 
     void flow() {
-//        if (adjacent.state != State.Played) {
-//            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
-//        }
+        if (adjacent.state != State.Played) {
+            throw new IllegalStateException("SpaceState(" + adjacent.state + ")");
+        }
 
         advance();
     }
 
     private boolean outOfBound(final Coordinates pos) {
         final int x = Math.abs((int) pos.x);
-        if (x > 3) {
+        if (x > 6) {
             return true;
         }
 
-        final float y = Math.abs(pos.y);
+        final int y = Math.abs(pos.y);
 
         switch (x) {
             case 0:
-                return y > 3;
+                return y > 6;
             case 1:
-                return y > 2.5;
+                return y > 5;
             case 2:
-                return y > 2;
+                return y > 4;
             case 3:
-                return y > 1.5;
+                return y > 3;
         }
 
         return false;

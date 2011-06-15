@@ -1,12 +1,6 @@
-package detangle;
+package com.linfords.detangle;
 
-import detangle.GameDriver.Event.Type;
-import detangle.Space.State;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.TreeMap;
+import com.linfords.detangle.Space.State;
 
 /**
  *
@@ -14,13 +8,14 @@ import java.util.TreeMap;
  */
 public class GameDriver {
 
+    public final static boolean TEST_RUN = true;
+    public final static boolean VERBOSE = false;
+
     static class Record {
 
         int highScore = 0;
         long gamesCompleted = 0;
-        Stack<Event> active = new Stack();
-        Map<Integer, List<Event>> goodGames = new TreeMap();
-        private final static int GOOD_GAME_THRESHOLD = 1000;
+        EventStack active = new EventStack();
 
         void add(final Event.Type type, final Space.Coordinates pos, final int marker, final int rotation, final int score) {
             active.push(new Event(type, pos, marker, rotation, score));
@@ -33,7 +28,7 @@ public class GameDriver {
             }
             return sb.toString();
         }
-        
+
         String toStringSummary() {
             return gamesCompleted + "] " + rotationSequence() + " length(" + pathLength() + ")" + " score(" + score() + ")";
         }
@@ -67,15 +62,11 @@ public class GameDriver {
         }
 
         void rewind(Board board) {
-            if (active.peek().type != Event.Type.End) {
-                throw new IllegalStateException("Rewinding when last event is " + active.peek().type);
+            if (TEST_RUN) {
+                validateRecord();
             }
 
             gamesCompleted++;
-
-            if (score() > GOOD_GAME_THRESHOLD) {
-                goodGames.put(score(), new ArrayList(active));
-            }
 
             if (score() > highScore) {
                 highScore = score();
@@ -108,7 +99,7 @@ public class GameDriver {
                 }
             }
         }
-        
+
         int pathLength() {
             int length = active.size() - 1;
             if (active.peek().type == Event.Type.End) {
@@ -154,41 +145,25 @@ public class GameDriver {
         private boolean isHighScore() {
             return score() > highScore;
         }
-    }
 
-    static class Event {
-
-        enum Type {
-
-            Start, Play, Flow, End
-        }
-        final Type type;
-        final Space.Coordinates pos;
-        final int marker;
-        final int rotation;
-        final int score;
-
-        Event(final Type type, final Space.Coordinates pos, final int marker, final int rotation, final int score) {
-            this.type = type;
-            this.pos = pos;
-            this.marker = marker;
-            this.rotation = rotation;
-            this.score = score;
-        }
-
-        @Override
-        public String toString() {
-            return "played(" + pos + ") rotation(" + rotation + ") score(" + score + ")";
+        private void validateRecord() {
+            switch ((int) gamesCompleted) {
+                case 549:
+                    assert toStringSummary().equals("549] >000100013-0--------0010-101010-100-011301-------00---422--------5-----------| length(76) score(252)") : toStringSummary();
+                    break;
+                case 144349:
+                    assert toStringSummary().equals("144349] >000100013-0--------0010-101010-103-014450----------50----24-----------10---------------| length(87) score(378)") : toStringSummary();
+                    break;
+            }
         }
     }
 
     private void grind() {
-        final boolean verbose = false;
         Board board = new Board();
         Record record = new Record();
         record.add(Event.Type.Start, board.current.pos, board.current.marker, 0, 0);
 
-        if (verbose) {
+        if (VERBOSE) {
             System.out.println(board.current + " (start)");
         }
 
@@ -200,7 +175,7 @@ public class GameDriver {
             while (board.adjacent.state == State.Playable) {
                 final Space playable = board.adjacent;
                 int p = 1;
-                if (verbose) {
+                if (VERBOSE) {
                     System.out.println(playable + " (playing) +" + p);
                 }
 
@@ -209,7 +184,7 @@ public class GameDriver {
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;
                     p++;
-                    if (verbose) {
+                    if (VERBOSE) {
                         System.out.println(flowable + " (flowing) +" + p);
                     }
                     board.flow();
@@ -219,17 +194,16 @@ public class GameDriver {
 
             record.add(Event.Type.End, board.adjacent.pos, board.adjacent.marker, 0, record.score());
 
-            if (verbose) {
+            if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
                 System.out.println(record.toStringSummary());
                 System.out.println(record.toStringDetail());
                 System.out.println();
-            }
-            else if (record.isHighScore()) {
+            } else if (record.isHighScore()) {
                 System.out.println(record.toStringSummary());
                 System.out.println(record.toStringDetail());
                 System.out.println();
-            } else if ((record.gamesCompleted % 10_000_000) == 0) {
+            } else if ((record.gamesCompleted % 25_000_000) == 0) {
                 System.out.println(record.toStringSummary());
             }
         }

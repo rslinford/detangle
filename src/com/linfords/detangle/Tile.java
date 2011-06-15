@@ -1,4 +1,4 @@
-package detangle;
+package com.linfords.detangle;
 
 import java.util.Arrays;
 
