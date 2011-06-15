@@ -24,7 +24,7 @@ class EventStack implements Iterable<Event> {
     void push(Event event) {
         events[size++] = event;
     }
-    
+
     int size() {
         return size;
     }
@@ -60,14 +60,16 @@ class Event {
         Start, Play, Flow, End
     }
     final Type type;
-    final Space.Coordinates pos;
+    final int posX;
+    final int posY;
     final int marker;
     final int rotation;
     final int score;
 
-    Event(final Type type, final Space.Coordinates pos, final int marker, final int rotation, final int score) {
+    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score) {
         this.type = type;
-        this.pos = pos;
+        this.posX = posX;
+        this.posY = posY;
         this.marker = marker;
         this.rotation = rotation;
         this.score = score;
@@ -75,6 +77,6 @@ class Event {
 
     @Override
     public String toString() {
-        return "played(" + pos + ") rotation(" + rotation + ") score(" + score + ")";
+        return "played{" + posX + ", " + posY + " } rotation(" + rotation + ") score(" + score + ")";
     }
 }

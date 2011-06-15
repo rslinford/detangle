@@ -6,27 +6,30 @@ package com.linfords.detangle;
  */
 public class Space {
 
+    final static int OFFSET = 8;
     Tile tile = null;
-    final Coordinates pos;
+    final int posX;
+    final int posY;
     State state = State.Wall;
-    int marker = -1;
+    int nodeMarker = -1;
 
-    Space(final Coordinates pos) {
-        this.pos = pos;
+    Space(final int posX, final int posY) {
+        this.posX = posX;
+        this.posY = posY;
     }
 
     @Override
     public String toString() {
         String t = (tile == null) ? "x]" : tile.toString();
-        return t + " " + pos + " marker: " + marker;
+        return t + " {" + (posX - OFFSET) + ", " + (posY - OFFSET) + "} marker: " + nodeMarker;
     }
 
     void traverse() {
-        marker = tile.connectingNode(marker);
+        nodeMarker = tile.connectingNode(nodeMarker);
     }
 
-    void matchMarker(final Space otherSpace) {
-        marker = Tile.adjacentNode(otherSpace.marker);
+    void matchNodeMarkers(final Space otherSpace) {
+        nodeMarker = Tile.adjacentNode(otherSpace.nodeMarker);
     }
 
     private String direction(int marker) {
@@ -57,40 +60,5 @@ public class Space {
     enum State {
 
         Playable, Played, Wall
-    }
-
-    static class Coordinates {
-
-        final int x;
-        final int y;
-
-        Coordinates(final int x, final int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        @Override
-        public boolean equals(Object candidate) {
-            if ((candidate instanceof Coordinates) != true) {
-                return false;
-            }
-
-            Coordinates otherPos = (Coordinates) candidate;
-            if ((x != otherPos.x) || (y != otherPos.y)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return Integer.valueOf(x).hashCode() + Integer.valueOf(y).hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "{" + x + ", " + y + "}";
-        }
     }
 }

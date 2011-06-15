@@ -1,9 +1,6 @@
 package com.linfords.detangle;
 
-import com.linfords.detangle.Space.Coordinates;
 import com.linfords.detangle.Space.State;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
@@ -11,7 +8,7 @@ import java.util.Map;
  */
 class Board {
 
-    private final Map<Space.Coordinates, Space> board = new HashMap();
+    private final Space[][] board = new Space[18][18];
     private final TileStack tiles = new TileStack();
     private Tile swapTile;
     Space current;
@@ -20,50 +17,49 @@ class Board {
     Board() {
         this.swapTile = tiles.pop();
         this.current = createStartingSpace();
-        this.adjacent = locateSpace(calculateAdjacentCoordinates(current));
-        this.adjacent.matchMarker(this.current);
+        this.adjacent = locateAdjacent(current);
+        this.adjacent.matchNodeMarkers(current);
     }
 
-    private static Space.Coordinates calculateAdjacentCoordinates(Space space) {
-        switch (space.marker) {
+    private Space locateAdjacent(final Space space) {
+        switch (space.nodeMarker) {
             case 0:
             case 1:
-                return new Space.Coordinates(space.pos.x, space.pos.y + 2);
+                return locateSpace(space.posX, space.posY + 2);
             case 2:
             case 3:
-                return new Space.Coordinates(space.pos.x + 2, space.pos.y + 1);
+                return locateSpace(space.posX + 2, space.posY + 1);
             case 4:
             case 5:
-                return new Space.Coordinates(space.pos.x + 2, space.pos.y - 1);
+                return locateSpace(space.posX + 2, space.posY - 1);
             case 6:
             case 7:
-                return new Space.Coordinates(space.pos.x, space.pos.y - 2);
+                return locateSpace(space.posX, space.posY - 2);
             case 8:
             case 9:
-                return new Space.Coordinates(space.pos.x - 2, space.pos.y - 1);
+                return locateSpace(space.posX - 2, space.posY - 1);
             case 10:
             case 11:
-                return new Space.Coordinates(space.pos.x - 2, space.pos.y + 1);
+                return locateSpace(space.posX - 2, space.posY + 1);
             default:
-                throw new IllegalArgumentException("Space token(" + space.marker + ")");
+                throw new IllegalArgumentException("Space token(" + space.nodeMarker + ")");
         }
     }
-    
+
     private Space createStartingSpace() {
-        Coordinates pos = new Coordinates(0, 0);
-        Space space = new Space(pos);
-        board.put(pos, space);
+        Space space = new Space(Space.OFFSET, Space.OFFSET);
+        board[Space.OFFSET][Space.OFFSET] = space;
         space.state = State.Wall;
-        space.marker = 0;
+        space.nodeMarker = 0;
         return space;
     }
 
-    private Space locateSpace(Space.Coordinates pos) {
-        Space space = board.get(pos);
+    private Space locateSpace(final int posX, final int posY) {
+        Space space = board[posX][posY];
         if (space == null) {
-            space = new Space(pos);
-            board.put(pos, space);
-            if (outOfBound(pos)) {
+            space = new Space(posX, posY);
+            board[posX][posY] = space;
+            if (outOfBounds(posX, posY)) {
                 space.state = State.Wall;
             } else {
                 space.state = State.Playable;
@@ -77,8 +73,8 @@ class Board {
     private void advance() {
         adjacent.traverse();
         current = adjacent;
-        adjacent = locateSpace(calculateAdjacentCoordinates(current));
-        adjacent.matchMarker(current);
+        adjacent = locateAdjacent(current);
+        adjacent.matchNodeMarkers(current);
     }
 
     void play() {
@@ -98,13 +94,13 @@ class Board {
         advance();
     }
 
-    private boolean outOfBound(final Coordinates pos) {
-        final int x = Math.abs((int) pos.x);
+    private boolean outOfBounds(final int posX, final int posY) {
+        final int x = Math.abs(posX - Space.OFFSET);
         if (x > 6) {
             return true;
         }
 
-        final int y = Math.abs(pos.y);
+        final int y = Math.abs(posY - Space.OFFSET);
 
         switch (x) {
             case 0:
@@ -120,18 +116,18 @@ class Board {
         return false;
     }
 
-    void putTileBack(final Coordinates pos) {
-        board.remove(pos);
+    void putTileBack(final int posX, final int posY) {
+        board[posX][posY] = null;
         tiles.unpop();
     }
 
     /** Undo play on adjacentPos and set its rotation for another try. */
-    void undoPlay(final Coordinates currentPos, final int currentMarker,
-            final Coordinates adjacentPos, final int rotation) {
-        current = locateSpace(currentPos);
-        current.marker = currentMarker;
-        adjacent = locateSpace(adjacentPos);
-        adjacent.marker = Tile.adjacentNode(currentMarker);
+    void undoPlay(final int currentPosX, final int currentPosY, final int currentMarker,
+            final int adjacentPosX, final int adjacentPosY, final int rotation) {
+        current = locateSpace(currentPosX, currentPosY);
+        current.nodeMarker = currentMarker;
+        adjacent = locateSpace(adjacentPosX, adjacentPosY);
+        adjacent.nodeMarker = Tile.adjacentNode(currentMarker);
         adjacent.tile.setRotation(rotation);
         adjacent.state = Space.State.Playable;
     }
