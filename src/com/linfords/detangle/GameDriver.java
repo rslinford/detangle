@@ -8,7 +8,7 @@ import com.linfords.detangle.Space.State;
  */
 public class GameDriver {
 
-    public final static boolean TEST_RUN = false;
+    public final static boolean TEST_RUN = true;
     public final static boolean VERBOSE = false;
 
     static class Record {
