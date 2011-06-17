@@ -1,6 +1,8 @@
 package com.linfords.detangle;
 
 import com.linfords.detangle.Space.State;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  *
@@ -18,8 +20,9 @@ class Board {
         this.swapTile = tiles.pop();
         wipeSpaces();
         this.current = initStartingSpace();
-        this.adjacent = locateAdjacent(current);
+        this.adjacent = locateMarkedAdjacent(current);
         this.adjacent.matchNodeMarkers(current);
+        this.adjacent.flipTile(tiles.pop());
     }
 
     private void wipeSpaces() {
@@ -36,28 +39,36 @@ class Board {
         }
     }
 
-    private Space locateAdjacent(final Space space) {
-        switch (space.nodeMarker) {
+    private Space locateMarkedAdjacent(final Space space) {
+        return locateAdjacent(space.posX, space.posY, space.nodeMarker);
+    }
+
+    private Space locateAdjacent(final Space space, int node) {
+        return locateAdjacent(space.posX, space.posY, node);
+    }
+
+    private Space locateAdjacent(final int x, final int y, final int node) {
+        switch (node) {
             case 0:
             case 1:
-                return prepareSpace(space.posX, space.posY + 2);
+                return board[x][y + 2];
             case 2:
             case 3:
-                return prepareSpace(space.posX + 2, space.posY + 1);
+                return board[x + 2][y + 1];
             case 4:
             case 5:
-                return prepareSpace(space.posX + 2, space.posY - 1);
+                return board[x + 2][y - 1];
             case 6:
             case 7:
-                return prepareSpace(space.posX, space.posY - 2);
+                return board[x][y - 2];
             case 8:
             case 9:
-                return prepareSpace(space.posX - 2, space.posY - 1);
+                return board[x - 2][y - 1];
             case 10:
             case 11:
-                return prepareSpace(space.posX - 2, space.posY + 1);
+                return board[x - 2][y + 1];
             default:
-                throw new IllegalArgumentException("Space token(" + space.nodeMarker + ")");
+                throw new IllegalArgumentException("node(" + node + ")");
         }
     }
 
@@ -68,21 +79,24 @@ class Board {
         return space;
     }
 
-    private Space prepareSpace(final int posX, final int posY) {
-        final Space space = board[posX][posY];
-        if (space.state == State.Covered) {
-            space.tile = tiles.pop();
-            space.state = State.Playable;
-        }
-
-        return space;
-    }
-
     private void advance() {
         adjacent.traverse();
         current = adjacent;
-        adjacent = locateAdjacent(current);
+        adjacent = locateMarkedAdjacent(current);
         adjacent.matchNodeMarkers(current);
+        switch (adjacent.state) {
+            case Covered:
+                adjacent.flipTile(tiles.pop());
+                break;
+            case Wall:
+            case Played:
+                // expected cases, but nothing to do
+                break;
+            default:
+                assert false : adjacent.state;
+        }
+        if (adjacent.state == State.Playable) {
+        }
     }
 
     void play() {
@@ -140,5 +154,43 @@ class Board {
         adjacent.nodeMarker = Tile.adjacentNode(currentMarker);
         adjacent.tile.setRotation(rotation);
         adjacent.state = Space.State.Playable;
+    }
+
+    static class WallNode {
+
+        final Space space;
+        final int node;
+
+        public WallNode(final Space space, final int node) {
+            this.space = space;
+            this.node = node;
+        }
+    }
+    Collection<WallNode> wallNodes = new ArrayList();
+
+    void spinForWalls(Space s) {
+        for (int i = 0; i < Tile.NODE_QTY; i++) {
+            Space s2 = locateAdjacent(s, i);
+            if (s2.state == State.Wall) {
+                wallNodes.add(new WallNode(s2, Tile.adjacentNode(i)));
+            }
+        }
+    }
+
+    void findWallNodes() {
+        Space s1 = board[Space.OFFSET][Space.OFFSET];
+
+        // spin around center
+        for (int i = 0; i < Tile.NODE_QTY; i += 2) {
+            Space s2 = locateAdjacent(s1, i);
+            wallNodes.add(new WallNode(s2, Tile.adjacentNode(i)));
+            wallNodes.add(new WallNode(s2, Tile.adjacentNode(i + 1)));
+        }
+
+        do {
+            s1 = locateAdjacent(s1, 0);
+        } while (s1.state != State.Wall);
+        
+        
     }
 }

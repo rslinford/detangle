@@ -26,9 +26,9 @@ class Tile {
     }
 
     void setRotation(int rotation) {
-        this.rotation = rotation  % SIDE_QTY;
+        this.rotation = rotation % SIDE_QTY;
     }
-    
+
     int getRotation() {
         return rotation;
     }
@@ -40,7 +40,7 @@ class Tile {
     private int adjustForInternal(final int externalNode) {
         return ((Tile.NODE_QTY + externalNode) - (rotation * 2)) % Tile.NODE_QTY;
     }
-    
+
     private int adjustForExternal(final int internalNode) {
         return (internalNode + (rotation * 2)) % Tile.NODE_QTY;
     }

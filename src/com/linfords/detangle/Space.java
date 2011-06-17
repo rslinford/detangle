@@ -32,29 +32,10 @@ public class Space {
         nodeMarker = Tile.adjacentNode(otherSpace.nodeMarker);
     }
 
-    private String direction(int marker) {
-        switch (marker) {
-            case 0:
-            case 1:
-                return "N";
-            case 2:
-            case 3:
-                return "NE";
-            case 4:
-            case 5:
-                return "SE";
-            case 6:
-            case 7:
-                return "S";
-            case 8:
-            case 9:
-                return "SW";
-            case 10:
-            case 11:
-                return "NW";
-            default:
-                throw new IllegalArgumentException("marker " + marker);
-        }
+    void flipTile(Tile tile) {
+        assert state == State.Covered : state;
+        this.tile = tile;
+        state = State.Playable;
     }
 
     enum State {

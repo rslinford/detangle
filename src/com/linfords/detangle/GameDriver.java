@@ -8,7 +8,7 @@ import com.linfords.detangle.Space.State;
  */
 public class GameDriver {
 
-    public final static boolean TEST_RUN = false;
+    public final static boolean TEST_RUN = true;
     public final static boolean VERBOSE = false;
 
     static class Record {
@@ -205,7 +205,7 @@ public class GameDriver {
                 System.out.println(record.toStringSummary());
                 System.out.println(record.toStringDetail());
                 System.out.println();
-            } else if ((record.gamesCompleted % 100_000_000) == 0) {
+            } else if ((record.gamesCompleted % 250_000_000) == 0) {
                 System.out.println(record.toStringSummary());
             }
         }
