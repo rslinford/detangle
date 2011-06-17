@@ -2,19 +2,20 @@ package com.linfords.detangle;
 
 import com.linfords.detangle.Space.State;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 /**
  *
  * @author Scott
  */
-class Board {
+final class Board {
 
     private final Space[][] board = new Space[18][18];
     private final TileStack tiles = new TileStack();
     private Tile swapTile;
     Space current;
     Space adjacent;
+    private WallNode wallNodes[];
 
     Board() {
         this.swapTile = tiles.pop();
@@ -23,6 +24,8 @@ class Board {
         this.adjacent = locateMarkedAdjacent(current);
         this.adjacent.matchNodeMarkers(current);
         this.adjacent.flipTile(tiles.pop());
+
+        initWallNodes();
     }
 
     private void wipeSpaces() {
@@ -165,32 +168,157 @@ class Board {
             this.space = space;
             this.node = node;
         }
-    }
-    Collection<WallNode> wallNodes = new ArrayList();
 
-    void spinForWalls(Space s) {
-        for (int i = 0; i < Tile.NODE_QTY; i++) {
-            Space s2 = locateAdjacent(s, i);
-            if (s2.state == State.Wall) {
-                wallNodes.add(new WallNode(s2, Tile.adjacentNode(i)));
-            }
+        @Override
+        public String toString() {
+            return "[WallNode " + space + " wallNode(" + node + ")]";
+
         }
     }
 
-    void findWallNodes() {
-        Space s1 = board[Space.OFFSET][Space.OFFSET];
+    void initWallNodes() {
 
-        // spin around center
-        for (int i = 0; i < Tile.NODE_QTY; i += 2) {
-            Space s2 = locateAdjacent(s1, i);
-            wallNodes.add(new WallNode(s2, Tile.adjacentNode(i)));
-            wallNodes.add(new WallNode(s2, Tile.adjacentNode(i + 1)));
+        List<WallNode> temp = new ArrayList();
+        
+        // Nodes around the center tile. Clockwise.
+        temp.add(new WallNode(board[8][10], 6));
+        temp.add(new WallNode(board[8][10], 7));
+        temp.add(new WallNode(board[10][9], 8));
+        temp.add(new WallNode(board[10][9], 9));
+        temp.add(new WallNode(board[10][7], 10));
+        temp.add(new WallNode(board[10][7], 11));
+        temp.add(new WallNode(board[8][6], 0));
+        temp.add(new WallNode(board[8][6], 1));
+        temp.add(new WallNode(board[6][7], 2));
+        temp.add(new WallNode(board[6][7], 3));
+        temp.add(new WallNode(board[6][9], 4));
+        temp.add(new WallNode(board[6][9], 5));
+        
+        // Top Corner
+        temp.add(new WallNode(board[8][14], 10));
+        temp.add(new WallNode(board[8][14], 11));
+        temp.add(new WallNode(board[8][14], 0));
+        temp.add(new WallNode(board[8][14], 1));
+        temp.add(new WallNode(board[8][14], 2));
+        temp.add(new WallNode(board[8][14], 3));
+        
+        // North East Side
+        temp.add(new WallNode(board[10][13], 0));
+        temp.add(new WallNode(board[10][13], 1));
+        temp.add(new WallNode(board[10][13], 2));
+        temp.add(new WallNode(board[10][13], 3));
+        
+        temp.add(new WallNode(board[12][12], 0));
+        temp.add(new WallNode(board[12][12], 1));
+        temp.add(new WallNode(board[12][12], 2));
+        temp.add(new WallNode(board[12][12], 3));
+        
+        // North East Corner
+        temp.add(new WallNode(board[14][11], 0));
+        temp.add(new WallNode(board[14][11], 1));
+        temp.add(new WallNode(board[14][11], 2));
+        temp.add(new WallNode(board[14][11], 3));
+        temp.add(new WallNode(board[14][11], 4));
+        temp.add(new WallNode(board[14][11], 5));
+        
+        // East Side
+        temp.add(new WallNode(board[14][9], 2));
+        temp.add(new WallNode(board[14][9], 3));
+        temp.add(new WallNode(board[14][9], 4));
+        temp.add(new WallNode(board[14][9], 5));
+        
+        temp.add(new WallNode(board[14][7], 2));
+        temp.add(new WallNode(board[14][7], 3));
+        temp.add(new WallNode(board[14][7], 4));
+        temp.add(new WallNode(board[14][7], 5));
+        
+        // South East Corner
+        temp.add(new WallNode(board[14][5], 2));
+        temp.add(new WallNode(board[14][5], 3));
+        temp.add(new WallNode(board[14][5], 4));
+        temp.add(new WallNode(board[14][5], 5));
+        temp.add(new WallNode(board[14][5], 6));
+        temp.add(new WallNode(board[14][5], 7));
+        
+        // South East Side
+        temp.add(new WallNode(board[12][4], 4));
+        temp.add(new WallNode(board[12][4], 5));
+        temp.add(new WallNode(board[12][4], 6));
+        temp.add(new WallNode(board[12][4], 7));
+        
+        temp.add(new WallNode(board[10][3], 4));
+        temp.add(new WallNode(board[10][3], 5));
+        temp.add(new WallNode(board[10][3], 6));
+        temp.add(new WallNode(board[10][3], 7));
+        
+        // South Corner
+        temp.add(new WallNode(board[8][2], 4));
+        temp.add(new WallNode(board[8][2], 5));
+        temp.add(new WallNode(board[8][2], 6));
+        temp.add(new WallNode(board[8][2], 7));
+        temp.add(new WallNode(board[8][2], 8));
+        temp.add(new WallNode(board[8][2], 9));
+        
+        // South West Side
+        temp.add(new WallNode(board[6][3], 6));
+        temp.add(new WallNode(board[6][3], 7));
+        temp.add(new WallNode(board[6][3], 8));
+        temp.add(new WallNode(board[6][3], 9));
+        
+        temp.add(new WallNode(board[4][4], 6));
+        temp.add(new WallNode(board[4][4], 7));
+        temp.add(new WallNode(board[4][4], 8));
+        temp.add(new WallNode(board[4][4], 9));
+        
+        // South West Corner
+        temp.add(new WallNode(board[2][5], 6));
+        temp.add(new WallNode(board[2][5], 7));
+        temp.add(new WallNode(board[2][5], 8));
+        temp.add(new WallNode(board[2][5], 9));
+        temp.add(new WallNode(board[2][5], 10));
+        temp.add(new WallNode(board[2][5], 11));
+        
+        // West Side
+        temp.add(new WallNode(board[2][7], 8));
+        temp.add(new WallNode(board[2][7], 9));
+        temp.add(new WallNode(board[2][7], 10));
+        temp.add(new WallNode(board[2][7], 11));
+
+        temp.add(new WallNode(board[2][9], 8));
+        temp.add(new WallNode(board[2][9], 9));
+        temp.add(new WallNode(board[2][9], 10));
+        temp.add(new WallNode(board[2][9], 11));
+
+        // North West Corner
+        temp.add(new WallNode(board[2][11], 8));
+        temp.add(new WallNode(board[2][11], 9));
+        temp.add(new WallNode(board[2][11], 10));
+        temp.add(new WallNode(board[2][11], 11));
+        temp.add(new WallNode(board[2][11], 0));
+        temp.add(new WallNode(board[2][11], 1));
+        
+        // North West Side
+        temp.add(new WallNode(board[4][12], 10));
+        temp.add(new WallNode(board[4][12], 11));
+        temp.add(new WallNode(board[4][12], 0));
+        temp.add(new WallNode(board[4][12], 1));
+
+        temp.add(new WallNode(board[6][13], 10));
+        temp.add(new WallNode(board[6][13], 11));
+        temp.add(new WallNode(board[6][13], 0));
+        temp.add(new WallNode(board[6][13], 1));
+
+        wallNodes = temp.toArray(new WallNode[temp.size()]);
+
+        if (GameDriver.TEST_RUN) {
+            assertWallNodes();
         }
+    }
 
-        do {
-            s1 = locateAdjacent(s1, 0);
-        } while (s1.state != State.Wall);
-        
-        
+    void assertWallNodes() {
+        for (int i = 0; i < wallNodes.length; i++) {
+            final Space wallSpace = locateAdjacent(wallNodes[i].space, wallNodes[i].node);
+            assert wallSpace.state == State.Wall : i + "] " + wallNodes[i];
+        }
     }
 }

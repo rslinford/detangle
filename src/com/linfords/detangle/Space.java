@@ -20,8 +20,7 @@ public class Space {
 
     @Override
     public String toString() {
-        String t = (tile == null) ? "x]" : tile.toString();
-        return t + " {" + (posX - OFFSET) + ", " + (posY - OFFSET) + "} marker: " + nodeMarker;
+        return "{" + posX + ", " + posY + "} " + tile + " marker(" + nodeMarker + ")";
     }
 
     void traverse() {
