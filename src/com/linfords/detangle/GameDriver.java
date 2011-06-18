@@ -212,6 +212,16 @@ public class GameDriver {
     }
 
     public static void main(String[] args) {
+        // Assert that assertions are enabled.
+        if (TEST_RUN) {
+            try {
+                assert false;
+                throw new IllegalStateException("Assertions are not enabled. Test run would give a false OK.");
+            } catch (AssertionError e) {
+                // Expected error
+            }
+        }
+
         new GameDriver().grind();
     }
 }
