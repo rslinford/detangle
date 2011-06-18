@@ -1,0 +1,23 @@
+http://www.nathanieljohnston.com/2011/01/the-maximum-score-in-the-game-entanglement-is-9080/
+
+Theoritcal max score: 9080
+Theoritical max path: 169
+
+All time path record: 134
+
+36 hexagons total for a standard board
+
+Total segments: 6*36 = 216
+
+35 moves then one big final move
+
+216 - 35 = 181 
+
+47 minimum unused paths (12+84)/2 - 1
+
+181 - 47 = 134 max final move
+
+http://en.wikipedia.org/wiki/Triangular_number
+
+T(n) = n(n + 1)/2
+

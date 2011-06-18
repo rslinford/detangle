@@ -2,7 +2,10 @@ package com.linfords.detangle;
 
 import com.linfords.detangle.Space.State;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  *
@@ -174,12 +177,34 @@ final class Board {
             return "[WallNode " + space + " wallNode(" + node + ")]";
 
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof WallNode)) {
+                return false;
+            }
+            WallNode wn = (WallNode) obj;
+            if (this.node != wn.node || this.space.posX != wn.space.posX || this.space.posY != wn.space.posY) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 59 * hash + this.space.posX;
+            hash = 59 * hash + this.space.posY;
+            hash = 59 * hash + this.node;
+            return hash;
+        }
     }
 
     void initWallNodes() {
 
         List<WallNode> temp = new ArrayList();
-        
+
         // Nodes around the center tile. Clockwise.
         temp.add(new WallNode(board[8][10], 6));
         temp.add(new WallNode(board[8][10], 7));
@@ -193,7 +218,7 @@ final class Board {
         temp.add(new WallNode(board[6][7], 3));
         temp.add(new WallNode(board[6][9], 4));
         temp.add(new WallNode(board[6][9], 5));
-        
+
         // Top Corner
         temp.add(new WallNode(board[8][14], 10));
         temp.add(new WallNode(board[8][14], 11));
@@ -201,18 +226,18 @@ final class Board {
         temp.add(new WallNode(board[8][14], 1));
         temp.add(new WallNode(board[8][14], 2));
         temp.add(new WallNode(board[8][14], 3));
-        
+
         // North East Side
         temp.add(new WallNode(board[10][13], 0));
         temp.add(new WallNode(board[10][13], 1));
         temp.add(new WallNode(board[10][13], 2));
         temp.add(new WallNode(board[10][13], 3));
-        
+
         temp.add(new WallNode(board[12][12], 0));
         temp.add(new WallNode(board[12][12], 1));
         temp.add(new WallNode(board[12][12], 2));
         temp.add(new WallNode(board[12][12], 3));
-        
+
         // North East Corner
         temp.add(new WallNode(board[14][11], 0));
         temp.add(new WallNode(board[14][11], 1));
@@ -220,18 +245,18 @@ final class Board {
         temp.add(new WallNode(board[14][11], 3));
         temp.add(new WallNode(board[14][11], 4));
         temp.add(new WallNode(board[14][11], 5));
-        
+
         // East Side
         temp.add(new WallNode(board[14][9], 2));
         temp.add(new WallNode(board[14][9], 3));
         temp.add(new WallNode(board[14][9], 4));
         temp.add(new WallNode(board[14][9], 5));
-        
+
         temp.add(new WallNode(board[14][7], 2));
         temp.add(new WallNode(board[14][7], 3));
         temp.add(new WallNode(board[14][7], 4));
         temp.add(new WallNode(board[14][7], 5));
-        
+
         // South East Corner
         temp.add(new WallNode(board[14][5], 2));
         temp.add(new WallNode(board[14][5], 3));
@@ -239,18 +264,18 @@ final class Board {
         temp.add(new WallNode(board[14][5], 5));
         temp.add(new WallNode(board[14][5], 6));
         temp.add(new WallNode(board[14][5], 7));
-        
+
         // South East Side
         temp.add(new WallNode(board[12][4], 4));
         temp.add(new WallNode(board[12][4], 5));
         temp.add(new WallNode(board[12][4], 6));
         temp.add(new WallNode(board[12][4], 7));
-        
+
         temp.add(new WallNode(board[10][3], 4));
         temp.add(new WallNode(board[10][3], 5));
         temp.add(new WallNode(board[10][3], 6));
         temp.add(new WallNode(board[10][3], 7));
-        
+
         // South Corner
         temp.add(new WallNode(board[8][2], 4));
         temp.add(new WallNode(board[8][2], 5));
@@ -258,18 +283,18 @@ final class Board {
         temp.add(new WallNode(board[8][2], 7));
         temp.add(new WallNode(board[8][2], 8));
         temp.add(new WallNode(board[8][2], 9));
-        
+
         // South West Side
         temp.add(new WallNode(board[6][3], 6));
         temp.add(new WallNode(board[6][3], 7));
         temp.add(new WallNode(board[6][3], 8));
         temp.add(new WallNode(board[6][3], 9));
-        
+
         temp.add(new WallNode(board[4][4], 6));
         temp.add(new WallNode(board[4][4], 7));
         temp.add(new WallNode(board[4][4], 8));
         temp.add(new WallNode(board[4][4], 9));
-        
+
         // South West Corner
         temp.add(new WallNode(board[2][5], 6));
         temp.add(new WallNode(board[2][5], 7));
@@ -277,7 +302,7 @@ final class Board {
         temp.add(new WallNode(board[2][5], 9));
         temp.add(new WallNode(board[2][5], 10));
         temp.add(new WallNode(board[2][5], 11));
-        
+
         // West Side
         temp.add(new WallNode(board[2][7], 8));
         temp.add(new WallNode(board[2][7], 9));
@@ -296,7 +321,7 @@ final class Board {
         temp.add(new WallNode(board[2][11], 11));
         temp.add(new WallNode(board[2][11], 0));
         temp.add(new WallNode(board[2][11], 1));
-        
+
         // North West Side
         temp.add(new WallNode(board[4][12], 10));
         temp.add(new WallNode(board[4][12], 11));
@@ -313,6 +338,56 @@ final class Board {
         if (GameDriver.TEST_RUN) {
             assertWallNodes();
         }
+    }
+
+    void calculateMaxPotential() {
+        int spent = 0;
+        int longestOpen = 0;
+        Set<WallNode> closedNodes = new HashSet();
+        for (int i = 0; i < wallNodes.length; i++) {
+            Space s = wallNodes[i].space;
+            if (s.state != State.Played || closedNodes.contains(wallNodes[i])) {
+                continue;
+            }
+
+            int length = 0;
+            int node = wallNodes[i].node;
+            System.out.print("WN(" + node + ")");
+            while (s.state == State.Played) {
+                if (length > 0) {
+                    node = Tile.adjacentNode(node);
+                    System.out.print("->");
+                }
+                length++;
+                System.out.print("{" + s.posX + "," + s.posY + "}");
+                node = s.tile.connectingNode(node);
+                Space s2 = locateAdjacent(s, node);
+                if (s2.state == State.Wall) {
+                    closedNodes.add(new WallNode(s, node));
+                }
+                s = s2;
+            }
+
+            switch (s.state) {
+                case Covered:
+                case Playable:
+                    System.out.print(" (open)");
+                    if (length > longestOpen && i != 1) {
+                        longestOpen = length;
+                    }
+                    break;
+                case Wall:
+                    System.out.print(" (closed)");
+                    break;
+                default:
+                    assert false : s.state;
+            }
+
+            System.out.println();
+
+            spent += length;
+        }
+        System.out.println("Spent segments(" + spent + ") longest open: " + longestOpen);
     }
 
     void assertWallNodes() {

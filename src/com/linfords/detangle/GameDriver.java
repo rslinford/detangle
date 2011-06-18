@@ -192,6 +192,9 @@ public class GameDriver {
                     board.flow();
                     record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p);
                 }
+                
+                System.out.println(record.toStringSummary());
+                board.calculateMaxPotential();
             }
 
             record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score());
