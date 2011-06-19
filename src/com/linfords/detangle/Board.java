@@ -105,8 +105,15 @@ final class Board {
     }
 
     void play() {
+        play(null);
+    }
+    
+    void play(Integer rotation) {
         assert adjacent.state == State.Playable : adjacent.state;
         adjacent.state = State.Played;
+        if (rotation != null) {
+            adjacent.tile.setRotation(rotation);
+        }
         advance();
     }
 
@@ -146,12 +153,21 @@ final class Board {
     void undoPlay(final int currentPosX, final int currentPosY, final int currentMarker,
             final int adjacentPosX, final int adjacentPosY, final int rotation) {
         current = board[currentPosX][currentPosY];
-        assert current.state == State.Played : current.state;
         current.nodeMarker = currentMarker;
-        adjacent = board[adjacentPosX][adjacentPosY];
-        assert adjacent.state == State.Played : adjacent.state;
+
+        final Space newAdjacent = board[adjacentPosX][adjacentPosY];
+        if (!newAdjacent.equals(adjacent)) {
+            if (adjacent.state == adjacent.state.Playable) {
+                adjacent.state = State.Covered;
+                adjacent.tile = null;
+                tiles.unpop();
+            }
+        }
+        adjacent = newAdjacent;
         adjacent.nodeMarker = Tile.adjacentNode(currentMarker);
         adjacent.tile.setRotation(rotation);
+        assert adjacent.state == State.Played : adjacent.state;
+        assert adjacent.tile != null;
         adjacent.state = Space.State.Playable;
     }
 
@@ -325,10 +341,10 @@ final class Board {
         final List<Node> path = new ArrayList();
         for (Node node1 = start; node1.space.state == Space.State.Played;) {
             final Node node2 = node1.connected();
-            assert !node1.equals(node2);
-            assert !path.contains(node1);
+//            assert !node1.equals(node2);
+//            assert !path.contains(node1);
             path.add(node1);
-            assert !path.contains(node2);
+//            assert !path.contains(node2);
             path.add(node2);
             node1 = node2.adjacent();
         }
@@ -382,14 +398,24 @@ final class Board {
         }
     }
 
-    void printBoard(String tag) {
-        int i = 1;
+    void validateBoard(String tag) {
+        if (VERBOSE) {
+            System.out.println("current: " + current);
+            System.out.println("adjacent: " + adjacent);
+        }
+        int i = 0;
         for (int x = 0; x < board.length; x++) {
             for (int y = 0; y < board[x].length; y++) {
-                if (board[x][y].state == State.Playable) {
-                    System.out.println(i++ + "] Playable tag(" + tag + ") " + board[x][y]);
+                switch (board[x][y].state) {
+                    case Playable:
+                        i++;
+                        if (VERBOSE) {
+                            System.out.println(i + "] Playable tag(" + tag + ") " + board[x][y]);
+                        }
+                        break;
                 }
             }
         }
+        assert i < 2 : i;
     }
 }

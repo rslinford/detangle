@@ -31,7 +31,7 @@ class EventStack implements Iterable<Event> {
 
     @Override
     public Iterator<Event> iterator() {
-        return new Iterator<Event>() {
+        return new Iterator<>() {
 
             private int i = 0;
 
@@ -65,18 +65,21 @@ class Event {
     final int marker;
     final int rotation;
     final int score;
+    final int potential;
 
-    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score) {
+    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score, final int potential) {
         this.type = type;
         this.posX = posX;
         this.posY = posY;
         this.marker = marker;
         this.rotation = rotation;
         this.score = score;
+        this.potential = potential;
     }
 
     @Override
     public String toString() {
-        return "played{" + posX + ", " + posY + " } rotation(" + rotation + ") score(" + score + ")";
+        String p = potential >= 0 ? " potential(" + potential + ")" : "";
+        return "played{" + posX + ", " + posY + " } rotation(" + rotation + ") score(" + score + ")" + p;
     }
 }
