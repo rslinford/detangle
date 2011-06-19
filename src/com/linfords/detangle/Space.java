@@ -24,7 +24,7 @@ public class Space {
     }
 
     void traverse() {
-        nodeMarker = tile.connectingNode(nodeMarker);
+        nodeMarker = tile.connectedNode(nodeMarker);
     }
 
     void matchNodeMarkers(final Space otherSpace) {

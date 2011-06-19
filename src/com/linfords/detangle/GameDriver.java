@@ -8,8 +8,8 @@ import com.linfords.detangle.Space.State;
  */
 public class GameDriver {
 
-    public final static boolean TEST_RUN = true;
-    public final static boolean VERBOSE = false;
+    final static boolean TEST_RUN = true;
+    final static boolean VERBOSE = false;
 
     static class Record {
 
@@ -42,7 +42,6 @@ public class GameDriver {
             if (inProgress()) {
                 return false;
             }
-
             for (Event m : active) {
                 switch (m.type) {
                     case Play:
@@ -51,13 +50,11 @@ public class GameDriver {
                             return false;
                         }
                         break;
-
                     case Start:
                     case End:
                         break;
                 }
             }
-
             return true;
         }
 
@@ -65,13 +62,10 @@ public class GameDriver {
             if (TEST_RUN) {
                 validateRecord();
             }
-
             gamesCompleted++;
-
             if (score() > highScore) {
                 highScore = score();
             }
-
             rewind:
             while (active.size() > 1) {
                 final Event e = active.pop();
@@ -83,7 +77,6 @@ public class GameDriver {
                     case Play:
                         //Event played = active.pop();
                         final int r = e.rotation + 1;
-
                         if (r == Tile.SIDE_QTY) {
                             if (active.peek().type == Event.Type.Start) {
                                 break rewind;
@@ -107,6 +100,26 @@ public class GameDriver {
                 length--;
             }
             return length < 0 ? 0 : length;
+        }
+
+        private int tilesFlowed() {
+            int length = 0;
+            for (Event e : active) {
+                if (e.type == Event.Type.Flow) {
+                    length++;
+                }
+            }
+            return length;
+        }
+
+        private int tilesPlayed() {
+            int length = 0;
+            for (Event e : active) {
+                if (e.type == Event.Type.Play) {
+                    length++;
+                }
+            }
+            return length;
         }
 
         @Override
@@ -160,27 +173,30 @@ public class GameDriver {
         }
     }
 
+    static int triangle(final int n) {
+        assert n >= 0 : n;
+        return n * (n + 1) / 2;
+    }
+
     private void grind() {
         Board board = new Board();
         Record record = new Record();
         record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0);
-
         if (VERBOSE) {
             System.out.println(board.current + " (start)");
         }
-
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
                 record.rewind(board);
             }
 
             while (board.adjacent.state == State.Playable) {
+
                 final Space playable = board.adjacent;
                 int p = 1;
                 if (VERBOSE) {
                     System.out.println(playable + " (playing) +" + p);
                 }
-
                 board.play();
                 record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p);
                 while (board.adjacent.state == State.Played) {
@@ -192,13 +208,8 @@ public class GameDriver {
                     board.flow();
                     record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p);
                 }
-                
-                System.out.println(record.toStringSummary());
-                board.calculateMaxPotential();
             }
-
             record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score());
-
             if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
                 System.out.println(record.toStringSummary());
@@ -224,7 +235,6 @@ public class GameDriver {
                 // Expected error
             }
         }
-
         new GameDriver().grind();
     }
 }

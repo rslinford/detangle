@@ -7,7 +7,7 @@ All time path record: 134
 
 36 hexagons total for a standard board
 
-Total segments: 6*36 = 216
+Total segments/paths: 6*36 = 216
 
 35 moves then one big final move
 
@@ -19,5 +19,5 @@ Total segments: 6*36 = 216
 
 http://en.wikipedia.org/wiki/Triangular_number
 
-T(n) = n(n + 1)/2
+T(n) = n * (n + 1)/2
 

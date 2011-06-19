@@ -46,7 +46,7 @@ class Tile {
     }
 
     /** Mapping function for node connections within a given tile. */
-    int connectingNode(final int node) {
+    int connectedNode(final int node) {
         final int internalNode = adjustForInternal(node);
         // Follow the path on the adjacent tile.
         for (int i = 0; i < NODE_QTY; i++) {
