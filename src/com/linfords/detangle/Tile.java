@@ -21,8 +21,8 @@ class Tile {
         NEXT_ID++;
     }
 
-    void rotate(final int n) {
-        rotation = (rotation + n) % SIDE_QTY;
+    void rotateOne() {
+        rotation = (rotation + 1) % SIDE_QTY;
     }
 
     void setRotation(int rotation) {

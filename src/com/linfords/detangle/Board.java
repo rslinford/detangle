@@ -107,7 +107,7 @@ final class Board {
     void play() {
         play(null);
     }
-    
+
     void play(Integer rotation) {
         assert adjacent.state == State.Playable : adjacent.state;
         adjacent.state = State.Played;
@@ -215,11 +215,13 @@ final class Board {
             return hash;
         }
     }
+    Node startNode = null;
 
     void initWallNodes() {
         // Nodes around the center tile. Clockwise.
+        startNode = new Node(board[8][10], 7);
+        wallNodes.add(startNode); // the active path starts here
         wallNodes.add(new Node(board[8][10], 6));
-        wallNodes.add(new Node(board[8][10], 7)); // the active path stats here
         wallNodes.add(new Node(board[10][9], 8));
         wallNodes.add(new Node(board[10][9], 9));
         wallNodes.add(new Node(board[10][7], 10));
@@ -337,9 +339,10 @@ final class Board {
         int longestFringe = 0;
     }
 
-    List<Node> tracePath(final Node start) {
+    List<Node> tracePath(final Node start, boolean includePlayable) {
         final List<Node> path = new ArrayList();
-        for (Node node1 = start; node1.space.state == Space.State.Played;) {
+        for (Node node1 = start; (node1.space.state == Space.State.Played)
+                || (includePlayable && node1.space.state == Space.State.Playable);) {
             final Node node2 = node1.connected();
 //            assert !node1.equals(node2);
 //            assert !path.contains(node1);
@@ -351,11 +354,30 @@ final class Board {
         return path;
     }
 
-    int traceWallPaths() {
+    static class TraceWallResult {
+
+        final List<Node> activePath;
+        final boolean gameOver;
+        final int totalSegments;
+
+        TraceWallResult(final List<Node> activePath, final boolean gameOver, final int totalSegments) {
+            this.activePath = activePath;
+            this.gameOver = gameOver;
+            this.totalSegments = totalSegments;
+        }
+    }
+
+    TraceWallResult traceWallPaths(boolean includePlayable) {
+        Boolean gameOver = null;
         int totalSegments = 0;
         int pathCount = 0;
+        List<Node> activePath = null;
         for (List<Node> wn = new ArrayList(wallNodes); !wn.isEmpty();) {
-            List<Node> path = tracePath(wn.remove(0));
+            Node n = wn.remove(0);
+            List<Node> path = tracePath(n, includePlayable);
+            if (startNode.equals(n)) {
+                activePath = path;
+            }
             if (path.isEmpty()) {
                 continue;
             }
@@ -370,11 +392,18 @@ final class Board {
             switch (beyond.space.state) {
                 case Covered:
                 case Playable:
+                    if (startNode.equals(n)) {
+                        gameOver = false;
+                    }
+                    
                     if (VERBOSE) {
                         System.out.println(" (open)");
                     }
                     break;
                 case Wall:
+                    if (startNode.equals(n)) {
+                        gameOver = true;
+                    }
                     assert wn.remove(last);
                     if (VERBOSE) {
                         System.out.println(" (closed)");
@@ -388,7 +417,7 @@ final class Board {
             System.out.println(
                     "pathCount(" + pathCount + ") totalSegments(" + totalSegments + ")");
         }
-        return totalSegments;
+        return new TraceWallResult(activePath, gameOver, totalSegments);
     }
 
     void assertWallNodes() {

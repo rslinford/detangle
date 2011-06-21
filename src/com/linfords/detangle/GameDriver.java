@@ -1,5 +1,6 @@
 package com.linfords.detangle;
 
+import com.linfords.detangle.Board.TraceWallResult;
 import com.linfords.detangle.Space.State;
 import java.util.Arrays;
 
@@ -18,7 +19,7 @@ public class GameDriver {
         long gamesCount = 0;
         EventStack active = new EventStack();
         final String tag;
-        
+
         Record(String tag) {
             this.tag = tag;
         }
@@ -68,7 +69,7 @@ public class GameDriver {
             if (TEST_RUN) {
                 validateRecord();
             }
-            if ((gamesCount % 2_000_000_000) == 0) {
+            if ((gamesCount % 500_000_000) == 0) {
                 System.out.println(toStringSummary());
             }
             gamesCount++;
@@ -188,42 +189,63 @@ public class GameDriver {
     }
 
     static int calculatePotential(Board board, Record record) {
-        return Board.SEGMENTS_PER_BOARD - board.traceWallPaths() + record.tilesPlayed();
+        return Board.SEGMENTS_PER_BOARD - board.traceWallPaths(false).totalSegments;
     }
 
-    private void grind(int[] startingMoves) {
-        final String ttag = "<" + Arrays.toString(startingMoves) + "> ";
+    private void spinAndChoose(Board board) {
+        int maxActivePath = Integer.MIN_VALUE;
+        int maxActivePathRotation = 0;
+        int minUsedSegments = Integer.MAX_VALUE;
+        int minUsedSegmentsRotation = 0;
+//        System.out.println("Path scores for {" + board.adjacent.posX + "," + board.adjacent.posY + "} ");
+        for (int i = 0; i < 6; i++) {
+            if (i > 0) {
+                board.adjacent.tile.rotateOne();
+            }
+            TraceWallResult tr = board.traceWallPaths(true);
+//            System.out.println("  r(" + board.adjacent.tile.getRotation() + ") seg(" + tr.totalSegments + ") act(" + tr.activePath.size() + ") go(" + tr.gameOver + ")");
+            if (minUsedSegments > tr.totalSegments && !tr.gameOver) {
+                minUsedSegments = tr.totalSegments;
+                minUsedSegmentsRotation = board.adjacent.tile.getRotation();
+            }
+            if (maxActivePath < tr.activePath.size()) {
+                maxActivePath = tr.activePath.size();
+                maxActivePathRotation = board.adjacent.tile.getRotation();
+            }
+        }
+
+        if (minUsedSegments == Integer.MAX_VALUE) {
+            board.adjacent.tile.setRotation(maxActivePathRotation);
+//            System.out.println("   selecting max active(" + maxActivePathRotation + ")");
+        } else {
+            board.adjacent.tile.setRotation(minUsedSegmentsRotation);
+//            System.out.println("   selecting min used(" + minUsedSegmentsRotation + ")");
+        }
+//        System.out.println();
+    }
+
+    private void grind() {
         Board board = new Board();
-        Record record = new Record(ttag);
+        Record record = new Record("");
         record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0, -1);
         if (VERBOSE) {
             System.out.println(board.current + " (start)");
         }
 
-        int startingIndex = 0;
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
                 record.rewind(board);
             }
             int potential = -1;
             while (board.adjacent.state == State.Playable) {
-                if (record.score() < 1000 && record.tilesFlowed() > 7) {
-//                    System.out.println(record.toStringSummary() + "(flow back)");
-                    while (record.tilesFlowed() > 0) {
-                        record.rewind(board);
-                    }
-                }
 
                 final Space playable = board.adjacent;
                 int p = 1;
                 if (VERBOSE) {
                     System.out.println(playable + " (playing) +" + p);
                 }
-                if (startingIndex < startingMoves.length) {
-                    board.play(startingMoves[startingIndex++]);
-                } else {
-                    board.play();
-                }
+
+                board.play();
                 record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, potential);
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;
@@ -234,8 +256,12 @@ public class GameDriver {
                     board.flow();
                     record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p, potential);
                 }
+
             }
             record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score(), potential);
+
+            System.out.println(record.toStringSummary());
+
             if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
                 System.out.println(record.toStringSummary());
@@ -249,20 +275,9 @@ public class GameDriver {
         }
     }
 
-    public static void main(String[] args) {
-        // Assert that assertions are enabled.
-        if (TEST_RUN) {
-            try {
-                assert false;
-                throw new IllegalStateException("Assertions are not enabled. Test run would give a false OK.");
-            } catch (AssertionError e) {
-                // Expected error
-            }
-        }
-
-        final int tc = Integer.parseInt(args[0]);
-        assert tc > 0 : tc;
-        assert tc < 101 : tc;
+    private static void multiThreaded(final int n) {
+        assert n > 0 : n;
+        assert n < 101 : n;
 
         int i = 0;
         stopalready:
@@ -277,15 +292,28 @@ public class GameDriver {
 
                         @Override
                         public void run() {
-                            new GameDriver().grind(new int[]{d1, d2, d3});
+                            // new GameDriver().grind(new int[]{d1, d2, d3});
                         }
                     }.start();
                     i++;
-                    if (i >= tc) {
+                    if (i >= n) {
                         break stopalready;
                     }
                 }
             }
         }
+    }
+
+    public static void main(String[] args) {
+        // Assert that assertions are enabled.
+        if (TEST_RUN) {
+            try {
+                assert false;
+                throw new IllegalStateException("Assertions are not enabled. Test run would give a false OK.");
+            } catch (AssertionError e) {
+                // Expected error
+            }
+        }
+        new GameDriver().grind();
     }
 }
