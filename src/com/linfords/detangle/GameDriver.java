@@ -224,6 +224,32 @@ public class GameDriver {
 //        System.out.println();
     }
 
+    private void spinAndChoose2(Board board) {
+        int maxOpenPath = Integer.MIN_VALUE;
+        int maxActivePathRotation = 0;
+//        System.out.println("Path scores for {" + board.adjacent.posX + "," + board.adjacent.posY + "} ");
+        for (int i = 0; i < 6; i++) {
+            if (i > 0) {
+                board.adjacent.tile.rotateOne();
+            }
+            final int openLength = board.traceOpenPaths();
+//            System.out.println("  r(" + board.adjacent.tile.getRotation() + ") seg(" + tr.totalSegments + ") act(" + tr.activePath.size() + ") go(" + tr.gameOver + ")");
+            if (maxOpenPath < openLength) {
+                maxOpenPath = openLength;
+                maxActivePathRotation = board.adjacent.tile.getRotation();
+            }
+        }
+
+        if (minUsedSegments == Integer.MAX_VALUE) {
+            board.adjacent.tile.setRotation(maxActivePathRotation);
+//            System.out.println("   selecting max active(" + maxActivePathRotation + ")");
+        } else {
+            board.adjacent.tile.setRotation(minUsedSegmentsRotation);
+//            System.out.println("   selecting min used(" + minUsedSegmentsRotation + ")");
+        }
+//        System.out.println();
+    }
+
     private void grind() {
         Board board = new Board();
         Record record = new Record("");
@@ -246,6 +272,7 @@ public class GameDriver {
                 }
 
                 board.play();
+                
                 record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, potential);
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;

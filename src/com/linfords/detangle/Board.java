@@ -353,6 +353,54 @@ final class Board {
         }
         return path;
     }
+    
+    
+
+    List<Node> openNodeForSpace(Space s) {
+        List<Node> list = new ArrayList();
+        for (int i = 0; i < Tile.NODE_QTY; i++) {
+            Space sa = locateAdjacent(s, i);
+            if (sa.state == State.Covered) {
+                list.add(new Node(s, i));
+            }
+        }
+        
+        return list;
+    }
+
+    int traceOpenPaths() {
+        List<Node> nodes = new ArrayList();
+        for (int x = 0; x < board.length; x++) {
+            for (int y = 0; y < board[x].length; y++) {
+                switch (board[x][y].state) {
+                    case Played:
+                    case Playable:
+                        nodes.addAll(openNodeForSpace(board[x][y]));
+                        break;
+                }
+            }
+        }
+
+        int longestPathLength = 0;
+        while (!nodes.isEmpty()) {
+            Node n = nodes.remove(0);
+            final List<Node> path = tracePath(n, true);
+            
+            // Don't count dead-end paths
+            if (path.get(path.size()-1).adjacent().space.state == State.Wall) {
+                System.out.println("Not open: " + path);
+                continue;
+            }
+            System.out.println("Open: size(" + path.size() + ") " + path);
+            
+            final int segments = path.size() / 2;
+            if (longestPathLength < segments) {
+                longestPathLength = segments;
+            }
+        }
+        System.out.println("  longest open(" + longestPathLength + ")");
+        return longestPathLength;
+    }
 
     static class TraceWallResult {
 
@@ -395,7 +443,7 @@ final class Board {
                     if (startNode.equals(n)) {
                         gameOver = false;
                     }
-                    
+
                     if (VERBOSE) {
                         System.out.println(" (open)");
                     }
