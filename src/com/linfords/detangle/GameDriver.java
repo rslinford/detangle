@@ -2,7 +2,6 @@ package com.linfords.detangle;
 
 import com.linfords.detangle.Board.TraceWallResult;
 import com.linfords.detangle.Space.State;
-import java.util.Arrays;
 
 /**
  *
@@ -15,7 +14,7 @@ public class GameDriver {
 
     static class Record {
 
-        int highScore = 0;
+        volatile static int highScore = 0;
         long gamesCount = 0;
         EventStack active = new EventStack();
         final String tag;
@@ -174,10 +173,10 @@ public class GameDriver {
         private void validateRecord() {
             switch ((int) gamesCount) {
                 case 549:
-//                    assert toStringSummary().equals("549] >000100013-0--------0010-101010-100-011301-------00---422--------5-----------| length(76) score(252)") : toStringSummary();
+                    assert toStringSummary().equals("549] >000100013-0--------0010-101010-100-011301-------00---422--------5-----------| length(76) moves(35) score(252)") : toStringSummary();
                     break;
                 case 144349:
-//                    assert toStringSummary().equals("144349] >000100013-0--------0010-101010-103-014450----------50----24-----------10---------------| length(87) score(378)") : toStringSummary();
+                    assert toStringSummary().equals("144349] >000100013-0--------0010-101010-103-014450----------50----24-----------10---------------| length(87) moves(35) score(378)") : toStringSummary();
                     break;
             }
         }
@@ -224,35 +223,39 @@ public class GameDriver {
 //        System.out.println();
     }
 
-    private void spinAndChoose2(Board board) {
-        int maxOpenPath = Integer.MIN_VALUE;
-        int maxActivePathRotation = 0;
-//        System.out.println("Path scores for {" + board.adjacent.posX + "," + board.adjacent.posY + "} ");
-        for (int i = 0; i < 6; i++) {
-            if (i > 0) {
-                board.adjacent.tile.rotateOne();
-            }
-            final int openLength = board.traceOpenPaths();
-//            System.out.println("  r(" + board.adjacent.tile.getRotation() + ") seg(" + tr.totalSegments + ") act(" + tr.activePath.size() + ") go(" + tr.gameOver + ")");
-            if (maxOpenPath < openLength) {
-                maxOpenPath = openLength;
-                maxActivePathRotation = board.adjacent.tile.getRotation();
-            }
-        }
-
-        if (minUsedSegments == Integer.MAX_VALUE) {
-            board.adjacent.tile.setRotation(maxActivePathRotation);
-//            System.out.println("   selecting max active(" + maxActivePathRotation + ")");
-        } else {
-            board.adjacent.tile.setRotation(minUsedSegmentsRotation);
-//            System.out.println("   selecting min used(" + minUsedSegmentsRotation + ")");
-        }
-//        System.out.println();
+//    private void spinAndChoose2(Board board) {
+//        int maxOpenPath = Integer.MIN_VALUE;
+//        int maxActivePathRotation = 0;
+////        System.out.println("Path scores for {" + board.adjacent.posX + "," + board.adjacent.posY + "} ");
+//        for (int i = 0; i < 6; i++) {
+//            if (i > 0) {
+//                board.adjacent.tile.rotateOne();
+//            }
+//            final int openLength = board.traceOpenPaths();
+////            System.out.println("  r(" + board.adjacent.tile.getRotation() + ") seg(" + tr.totalSegments + ") act(" + tr.activePath.size() + ") go(" + tr.gameOver + ")");
+//            if (maxOpenPath < openLength) {
+//                maxOpenPath = openLength;
+//                maxActivePathRotation = board.adjacent.tile.getRotation();
+//            }
+//        }
+//
+//        if (minUsedSegments == Integer.MAX_VALUE) {
+//            board.adjacent.tile.setRotation(maxActivePathRotation);
+////            System.out.println("   selecting max active(" + maxActivePathRotation + ")");
+//        } else {
+//            board.adjacent.tile.setRotation(minUsedSegmentsRotation);
+////            System.out.println("   selecting min used(" + minUsedSegmentsRotation + ")");
+//        }
+////        System.out.println();
+//    }
+    private void grind() {
+        grind(-1);
     }
 
-    private void grind() {
+    private void grind(final int startMove) {
         Board board = new Board();
-        Record record = new Record("");
+        final String tag = startMove == -1 ? "" : "<T" + startMove + ">";
+        Record record = new Record(tag);
         record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0, -1);
         if (VERBOSE) {
             System.out.println(board.current + " (start)");
@@ -271,8 +274,12 @@ public class GameDriver {
                     System.out.println(playable + " (playing) +" + p);
                 }
 
+                if (startMove != -1 && record.pathLength() == 0) {
+                    board.adjacent.tile.setRotation(startMove);
+                }
+
                 board.play();
-                
+
                 record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, potential);
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;
@@ -287,8 +294,6 @@ public class GameDriver {
             }
             record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score(), potential);
 
-            System.out.println(record.toStringSummary());
-
             if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
                 System.out.println(record.toStringSummary());
@@ -302,32 +307,16 @@ public class GameDriver {
         }
     }
 
-    private static void multiThreaded(final int n) {
-        assert n > 0 : n;
-        assert n < 101 : n;
+    private static void multiThreaded() {
+        for (int i = 0; i < 6; i++) {
+            final int startMove = i;
+            new Thread() {
 
-        int i = 0;
-        stopalready:
-        for (int c3 = 0; c3 < 6; c3++) {
-            for (int c2 = 0; c2 < 6; c2++) {
-                for (int c1 = 0; c1 < 6; c1++) {
-                    final int d3 = c3;
-                    final int d2 = c2;
-                    final int d1 = c1;
-
-                    new Thread() {
-
-                        @Override
-                        public void run() {
-                            // new GameDriver().grind(new int[]{d1, d2, d3});
-                        }
-                    }.start();
-                    i++;
-                    if (i >= n) {
-                        break stopalready;
-                    }
+                @Override
+                public void run() {
+                    new GameDriver().grind(startMove);
                 }
-            }
+            }.start();
         }
     }
 
@@ -341,6 +330,7 @@ public class GameDriver {
                 // Expected error
             }
         }
-        new GameDriver().grind();
+
+        multiThreaded();
     }
 }
