@@ -264,6 +264,15 @@ public class GameDriver {
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
                 record.rewind(board);
+
+                final int tilePlayed = record.tilesPlayed();
+                if (tilePlayed < 26 && record.score() < 1000) {
+                    while (record.tilesFlowed() > 5) {
+                        record.rewind(board);
+                    }
+                }
+                
+                
             }
             int potential = -1;
             while (board.adjacent.state == State.Playable) {
