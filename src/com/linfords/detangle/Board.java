@@ -2,6 +2,7 @@ package com.linfords.detangle;
 
 import com.linfords.detangle.Space.State;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -154,7 +155,6 @@ final class Board {
             final int adjacentPosX, final int adjacentPosY, final int rotation) {
         current = board[currentPosX][currentPosY];
         current.nodeMarker = currentMarker;
-
         final Space newAdjacent = board[adjacentPosX][adjacentPosY];
         if (!newAdjacent.equals(adjacent)) {
             if (adjacent.state == adjacent.state.Playable) {
@@ -353,8 +353,6 @@ final class Board {
         }
         return path;
     }
-    
-    
 
     List<Node> openNodeForSpace(Space s) {
         List<Node> list = new ArrayList();
@@ -364,11 +362,22 @@ final class Board {
                 list.add(new Node(s, i));
             }
         }
-        
         return list;
     }
 
-    int traceOpenPaths() {
+    static class TraceOpenResult {
+
+        int total = 0;
+        int longest = 0;
+
+        @Override
+        public String toString() {
+            return "totalOpen(" + total + ") longestOpen(" + longest + ")";
+        }
+    }
+    static final TraceOpenResult NULL_OPEN = new TraceOpenResult();
+
+    TraceOpenResult traceOpenPaths() {
         List<Node> nodes = new ArrayList();
         for (int x = 0; x < board.length; x++) {
             for (int y = 0; y < board[x].length; y++) {
@@ -380,57 +389,53 @@ final class Board {
                 }
             }
         }
-
-        int longestPathLength = 0;
+        TraceOpenResult result = new TraceOpenResult();
         while (!nodes.isEmpty()) {
             Node n = nodes.remove(0);
             final List<Node> path = tracePath(n, true);
-            
             // Don't count dead-end paths
-            if (path.get(path.size()-1).adjacent().space.state == State.Wall) {
-                System.out.println("Not open: " + path);
+            if (path.get(path.size() - 1).adjacent().space.state == State.Wall) {
+//                System.out.println("Closed: segments(" + path.size() / 2 + ") " + path);
                 continue;
             }
-            System.out.println("Open: size(" + path.size() + ") " + path);
-            
             final int segments = path.size() / 2;
-            if (longestPathLength < segments) {
-                longestPathLength = segments;
+//            System.out.println("Open: segments(" + segments + ") " + path);
+            if (result.longest < segments) {
+                result.longest = segments;
             }
+            result.total += segments;
         }
-        System.out.println("  longest open(" + longestPathLength + ")");
-        return longestPathLength;
+        return result;
     }
 
     static class TraceWallResult {
 
-        final List<Node> activePath;
-        final boolean gameOver;
-        final int totalSegments;
+        List<Node> activePath = Collections.EMPTY_LIST;
+        boolean gameOver = false;
+        int totalSegments = 0;
+        int longest = 0;
 
-        TraceWallResult(final List<Node> activePath, final boolean gameOver, final int totalSegments) {
-            this.activePath = activePath;
-            this.gameOver = gameOver;
-            this.totalSegments = totalSegments;
+        @Override
+        public String toString() {
+            return "totalWall(" + totalSegments + ") longestWall(" + longest + ")";
         }
     }
+    static final TraceWallResult NULL_WALL = new TraceWallResult();
 
     TraceWallResult traceWallPaths(boolean includePlayable) {
-        Boolean gameOver = null;
-        int totalSegments = 0;
         int pathCount = 0;
-        List<Node> activePath = null;
+        TraceWallResult result = new TraceWallResult();
         for (List<Node> wn = new ArrayList(wallNodes); !wn.isEmpty();) {
             Node n = wn.remove(0);
             List<Node> path = tracePath(n, includePlayable);
             if (startNode.equals(n)) {
-                activePath = path;
+                result.activePath = path;
             }
             if (path.isEmpty()) {
                 continue;
             }
             final int segments = path.size() / 2;
-            totalSegments += segments;
+            result.totalSegments += segments;
             pathCount++;
             if (VERBOSE) {
                 System.out.print("segments(" + segments + ") " + path);
@@ -441,16 +446,17 @@ final class Board {
                 case Covered:
                 case Playable:
                     if (startNode.equals(n)) {
-                        gameOver = false;
+                        result.gameOver = false;
+                    } else if (result.longest < segments) {
+                        result.longest = segments;
                     }
-
                     if (VERBOSE) {
                         System.out.println(" (open)");
                     }
                     break;
                 case Wall:
                     if (startNode.equals(n)) {
-                        gameOver = true;
+                        result.gameOver = true;
                     }
                     assert wn.remove(last);
                     if (VERBOSE) {
@@ -461,11 +467,7 @@ final class Board {
                     assert false;
             }
         }
-        if (VERBOSE) {
-            System.out.println(
-                    "pathCount(" + pathCount + ") totalSegments(" + totalSegments + ")");
-        }
-        return new TraceWallResult(activePath, gameOver, totalSegments);
+        return result;
     }
 
     void assertWallNodes() {

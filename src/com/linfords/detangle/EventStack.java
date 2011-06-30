@@ -1,5 +1,7 @@
 package com.linfords.detangle;
 
+import com.linfords.detangle.Board.TraceOpenResult;
+import com.linfords.detangle.Board.TraceWallResult;
 import java.util.Iterator;
 
 /**
@@ -11,7 +13,7 @@ class EventStack implements Iterable<Event> {
     /** Max possible path size in a perfect game. Plus 2 for start and end caps. */
     final static int THEORETICAL_MAX_PATH = 169 + 2;
     private int size = 0;
-    private final Event[] events = new Event[THEORETICAL_MAX_PATH];
+    private final Event[] events = new Event[300];
 
     Event pop() {
         return events[--size];
@@ -31,7 +33,7 @@ class EventStack implements Iterable<Event> {
 
     @Override
     public Iterator<Event> iterator() {
-        return new Iterator<>() {
+        return new Iterator() {
 
             private int i = 0;
 
@@ -65,21 +67,22 @@ class Event {
     final int marker;
     final int rotation;
     final int score;
-    final int potential;
+    final TraceWallResult wallResult;
+    final TraceOpenResult openResult;
 
-    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score, final int potential) {
+    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score, final TraceWallResult wallResult, final TraceOpenResult openResult) {
         this.type = type;
         this.posX = posX;
         this.posY = posY;
         this.marker = marker;
         this.rotation = rotation;
         this.score = score;
-        this.potential = potential;
+        this.wallResult = wallResult;
+        this.openResult = openResult;
     }
 
     @Override
     public String toString() {
-        String p = potential >= 0 ? " potential(" + potential + ")" : "";
-        return "played{" + posX + ", " + posY + " } rotation(" + rotation + ") score(" + score + ")" + p;
+        return type + "{" + posX + ", " + posY + " } r(" + rotation + ") " + wallResult + " " + openResult + " score(" + score + ")";
     }
 }

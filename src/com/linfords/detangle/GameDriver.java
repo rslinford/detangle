@@ -1,6 +1,8 @@
 package com.linfords.detangle;
 
+import com.linfords.detangle.Board.TraceOpenResult;
 import com.linfords.detangle.Board.TraceWallResult;
+import com.linfords.detangle.Event.Type;
 import com.linfords.detangle.Space.State;
 
 /**
@@ -18,19 +20,30 @@ public class GameDriver {
         long gamesCount = 0;
         EventStack active = new EventStack();
         final String tag;
+        final int startMove;
 
-        Record(String tag) {
-            this.tag = tag;
+        Record(final int startMove) {
+            this.startMove = startMove;
+            this.tag = "<T" + startMove + "> ";
         }
 
-        void add(final Event.Type type, final int posX, final int posY, final int marker, final int rotation, final int score, final int potential) {
-            active.push(new Event(type, posX, posY, marker, rotation, score, potential));
+        void add(final Type type, final int posX, final int posY, final int nodeMarker, final int rotation,
+                final int score, final TraceWallResult wallResult, final TraceOpenResult openResult) {
+            active.push(new Event(type, posX, posY, nodeMarker, rotation, score, wallResult, openResult));
         }
 
         String toStringDetail() {
             StringBuilder sb = new StringBuilder();
             for (Event m : active) {
                 sb.append(tag).append(m.type).append("{").append(m.posX).append(", ").append(m.posY).append("} r(").append(m.rotation).append(") s(").append(m.score).append("); ");
+            }
+            return sb.toString();
+        }
+
+        String toStringVerbose() {
+            StringBuilder sb = new StringBuilder();
+            for (Event m : active) {
+                sb.append(m).append('\n');
             }
             return sb.toString();
         }
@@ -68,8 +81,9 @@ public class GameDriver {
             if (TEST_RUN) {
                 validateRecord();
             }
-            if ((gamesCount % 500_000_000) == 0) {
+            if ((gamesCount % 1_000_000) == 0) {
                 System.out.println(toStringSummary());
+//                System.out.println(toStringVerbose());
             }
             gamesCount++;
             if (score() > highScore) {
@@ -139,6 +153,11 @@ public class GameDriver {
         private int score() {
             return active.peek().score;
         }
+        
+        private int potentialRating() {
+            final Event recent = active.peek();
+            return recent.wallResult.longest + recent.openResult.longest;
+        }
 
         private int size() {
             return active.size();
@@ -171,12 +190,15 @@ public class GameDriver {
 
         /** Validate results against a known data set: TILE_SET_TEST_DATA */
         private void validateRecord() {
+            if (startMove != 0) {
+                return;
+            }
             switch ((int) gamesCount) {
                 case 549:
-                    assert toStringSummary().equals("549] >000100013-0--------0010-101010-100-011301-------00---422--------5-----------| length(76) moves(35) score(252)") : toStringSummary();
+                    assert toStringSummary().equals("<T0> 549] >000100013-0--------0010-101010-100-011301-------00---422--------5-----------| length(76) moves(35) score(252)") : toStringSummary();
                     break;
                 case 144349:
-                    assert toStringSummary().equals("144349] >000100013-0--------0010-101010-103-014450----------50----24-----------10---------------| length(87) moves(35) score(378)") : toStringSummary();
+                    assert toStringSummary().equals("<T0> 144349] >000100013-0--------0010-101010-103-014450----------50----24-----------10---------------| length(87) moves(35) score(378)") : toStringSummary();
                     break;
             }
         }
@@ -249,14 +271,18 @@ public class GameDriver {
 ////        System.out.println();
 //    }
     private void grind() {
-        grind(-1);
+        grind(0);
+    }
+
+    private boolean lowPotential(Record record) {
+        final int move = record.tilesPlayed();
+        return (move + (int)(move / 3)) > record.potentialRating();
     }
 
     private void grind(final int startMove) {
         Board board = new Board();
-        final String tag = startMove == -1 ? "" : "<T" + startMove + ">";
-        Record record = new Record(tag);
-        record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0, -1);
+        Record record = new Record(startMove);
+        record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0, board.traceWallPaths(true), board.traceOpenPaths());
         if (VERBOSE) {
             System.out.println(board.current + " (start)");
         }
@@ -264,17 +290,20 @@ public class GameDriver {
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
                 record.rewind(board);
-
-                final int tilePlayed = record.tilesPlayed();
-                if (tilePlayed < 26 && record.score() < 1000) {
-                    while (record.tilesFlowed() > 5) {
-                        record.rewind(board);
-                    }
+                
+                while (lowPotential(record)) {
+                    record.rewind(board);
                 }
-                
-                
+
+//                // Too many flowed
+//                final int tilePlayed = record.tilesPlayed();
+//                if (tilePlayed < 26 && record.score() < 1000) {
+//                    while (record.tilesFlowed() > 5) {
+//                        record.rewind(board);
+//                    }
+//                }
+
             }
-            int potential = -1;
             while (board.adjacent.state == State.Playable) {
 
                 final Space playable = board.adjacent;
@@ -283,13 +312,14 @@ public class GameDriver {
                     System.out.println(playable + " (playing) +" + p);
                 }
 
-                if (startMove != -1 && record.pathLength() == 0) {
+                if (record.pathLength() == 0) {
                     board.adjacent.tile.setRotation(startMove);
                 }
-
+                final TraceWallResult wallPaths = board.traceWallPaths(true);
+                final TraceOpenResult openPaths = board.traceOpenPaths();
                 board.play();
+                record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, wallPaths, openPaths);
 
-                record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, potential);
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;
                     p++;
@@ -297,11 +327,10 @@ public class GameDriver {
                         System.out.println(flowable + " (flowing) +" + p);
                     }
                     board.flow();
-                    record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p, potential);
+                    record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p, wallPaths, openPaths);
                 }
-
             }
-            record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score(), potential);
+            record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score(), board.traceWallPaths(true), board.traceOpenPaths());
 
             if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
@@ -311,6 +340,7 @@ public class GameDriver {
             } else if (record.isHighScore()) {
                 System.out.println(record.toStringSummary());
                 System.out.println(record.toStringDetail());
+//                System.out.println(record.toStringVerbose());
                 System.out.println();
             }
         }
@@ -327,6 +357,10 @@ public class GameDriver {
                 }
             }.start();
         }
+    }
+
+    private static void singleThread() {
+        new GameDriver().grind();
     }
 
     public static void main(String[] args) {
