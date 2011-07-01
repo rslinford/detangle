@@ -99,22 +99,18 @@ class Event {
     final int marker;
     final int rotation;
     final int score;
-    final TraceWallResult wallResult;
-    final TraceOpenResult openResult;
 
-    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score, final TraceWallResult wallResult, final TraceOpenResult openResult) {
+    Event(final Type type, final int posX, final int posY, final int marker, final int rotation, final int score) {
         this.type = type;
         this.posX = posX;
         this.posY = posY;
         this.marker = marker;
         this.rotation = rotation;
         this.score = score;
-        this.wallResult = wallResult;
-        this.openResult = openResult;
     }
 
     @Override
     public String toString() {
-        return type + "{" + posX + ", " + posY + " } r(" + rotation + ") " + wallResult + " " + openResult + " score(" + score + ")";
+        return type + "{" + posX + ", " + posY + " } r(" + rotation + ") score(" + score + ")";
     }
 }

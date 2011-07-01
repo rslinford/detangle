@@ -375,7 +375,7 @@ final class Board {
             return "totalOpen(" + total + ") longestOpen(" + longest + ")";
         }
     }
-    static final TraceOpenResult NULL_OPEN = new TraceOpenResult();
+//    static final TraceOpenResult NULL_OPEN = new TraceOpenResult();
 
     TraceOpenResult traceOpenPaths() {
         List<Node> nodes = new ArrayList();
@@ -420,7 +420,7 @@ final class Board {
             return "totalWall(" + totalSegments + ") longestWall(" + longest + ")";
         }
     }
-    static final TraceWallResult NULL_WALL = new TraceWallResult();
+//    static final TraceWallResult NULL_WALL = new TraceWallResult();
 
     TraceWallResult traceWallPaths(boolean includePlayable) {
         int pathCount = 0;
