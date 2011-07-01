@@ -1,6 +1,7 @@
 package com.linfords.detangle;
 
 import com.linfords.detangle.Space.State;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,13 +18,14 @@ final class Board {
     final static int SEGMENTS_PER_BOARD_WALLED_OPTIMALY = SEGMENTS_PER_BOARD - OPTIMAL_WALL_SEGMENTS;
     final static int THEORETICAL_MAX_FINAL_MOVE = SEGMENTS_PER_BOARD - (36 - 1) - (OPTIMAL_WALL_SEGMENTS - 1);
     private final Space[][] board = new Space[18][18];
-    private final TileStack tiles = new TileStack();
+    private final TileStack tiles;
     private Tile swapTile;
     Space current;
     Space adjacent;
     private List<Node> wallNodes = new ArrayList();
 
-    Board() {
+    Board() throws IOException {
+        this.tiles = new TileStack();
         this.swapTile = tiles.pop();
         wipeSpaces();
         this.current = initStartingSpace();
@@ -375,7 +377,6 @@ final class Board {
             return "totalOpen(" + total + ") longestOpen(" + longest + ")";
         }
     }
-//    static final TraceOpenResult NULL_OPEN = new TraceOpenResult();
 
     TraceOpenResult traceOpenPaths() {
         List<Node> nodes = new ArrayList();

@@ -4,6 +4,7 @@ import com.linfords.detangle.Board.TraceOpenResult;
 import com.linfords.detangle.Board.TraceWallResult;
 
 import com.linfords.detangle.Space.State;
+import java.io.IOException;
 
 /**
  *
@@ -23,19 +24,19 @@ public class GameDriver {
         return Board.SEGMENTS_PER_BOARD - board.traceWallPaths(false).totalSegments;
     }
 
-    private static boolean lowPotential1(final GameRecord record, final Board board) {
+    private static boolean lowPotential(final GameRecord record, final Board board) {
         final TraceWallResult wallResult = board.traceWallPaths(true);
         final TraceOpenResult openResult = board.traceOpenPaths();
         final int potentialRating = wallResult.longest + openResult.longest;
         final int move = record.tilesPlayed();
-        return (move + (int) (move / 3.5)) > potentialRating;
+        return (move + (int) (move / 2)) > potentialRating;
     }
 
-    private void grind() {
+    private void grind() throws IOException {
         grind(0, false);
     }
 
-    private void grind(final int startMove, final boolean multiThreaded) {
+    private void grind(final int startMove, final boolean multiThreaded) throws IOException {
         Board board = new Board();
         GameRecord record = new GameRecord(startMove);
         record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0);
@@ -47,9 +48,9 @@ public class GameDriver {
             if (!record.inProgress()) {
                 record.rewind(board);
 
-                while (lowPotential1(record, board)) {
-                    record.rewind(board);
-                }
+//                while (lowPotential(record, board)) {
+//                    record.rewind(board);
+//                }
 
 //                // Too many flowed
 //                final int tilePlayed = record.tilesPlayed();
@@ -58,7 +59,6 @@ public class GameDriver {
 //                        record.rewind(board);
 //                    }
 //                }
-
             }
             while (board.adjacent.state == State.Playable) {
 
@@ -108,7 +108,11 @@ public class GameDriver {
 
                 @Override
                 public void run() {
-                    new GameDriver().grind(startMove, true);
+                    try {
+                        new GameDriver().grind(startMove, true);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             };
             t.setName("GameDriver_" + i);
@@ -117,7 +121,11 @@ public class GameDriver {
     }
 
     private static void singleThread() {
-        new GameDriver().grind();
+        try {
+            new GameDriver().grind();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

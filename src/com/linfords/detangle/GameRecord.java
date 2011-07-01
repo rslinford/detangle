@@ -74,7 +74,7 @@ class GameRecord {
         if (GameDriver.TEST_RUN) {
             validateRecord();
         }
-        if ((gamesCount % 5_000_000) == 0) {
+        if ((gamesCount % 2_000_000_000) == 0) {
             System.out.println(toStringSummary());
         }
         gamesCount++;

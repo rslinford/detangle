@@ -1,7 +1,5 @@
 package com.linfords.detangle;
 
-import com.linfords.detangle.Board.TraceOpenResult;
-import com.linfords.detangle.Board.TraceWallResult;
 import java.util.Iterator;
 
 /**
