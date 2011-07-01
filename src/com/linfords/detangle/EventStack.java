@@ -13,7 +13,7 @@ class EventStack implements Iterable<Event> {
     /** Max possible path size in a perfect game. Plus 2 for start and end caps. */
     final static int THEORETICAL_MAX_PATH = 169 + 2;
     private int size = 0;
-    private final Event[] events = new Event[300];
+    private final Event[] events = new Event[200];
 
     Event pop() {
         return events[--size];
@@ -24,11 +24,43 @@ class EventStack implements Iterable<Event> {
     }
 
     void push(Event event) {
-        events[size++] = event;
+        try {
+            events[size++] = event;
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            System.err.println("");
+            System.err.println("EventStack blowout. State:");
+            int e = 0;
+            int f = 0;
+            int p = 0;
+            int s = 0;
+            for (int i = 0; i < events.length; i++) {
+                switch (events[i].type) {
+                    case End:
+                        e++;
+                        break;
+                    case Flow:
+                        f++;
+                        break;
+                    case Play:
+                        p++;
+                        break;
+                    case Start:
+                        s++;
+                        break;
+                }
+                System.err.println(i + "] " + events[i]);
+            }
+            System.err.println("End(" + e + ") Flow(" + f + ") Play(" + p + ") Start(" + s + ")");
+            throw ex;
+        }
     }
 
     int size() {
         return size;
+    }
+    
+    Event get(int i) {
+        return events[i];
     }
 
     @Override

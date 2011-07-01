@@ -13,6 +13,7 @@ public class GameDriver {
 
     final static boolean TEST_RUN = false;
     final static boolean VERBOSE = false;
+    static int threadCount;
 
     static class Record {
 
@@ -57,6 +58,15 @@ public class GameDriver {
         }
 
         boolean isLastGame() {
+            // Check if thread has finished its chunk of work
+            if (threadCount > 1) { // true when running multithreaded
+                if (active.size() > 1) {
+                    if (active.get(1).rotation != startMove) { // true when thread has moved into another thread's chunk
+                        return true;
+                    }
+                }
+            }
+
             // Have to play the game out to know for sure.
             if (inProgress()) {
                 return false;
@@ -81,7 +91,7 @@ public class GameDriver {
             if (TEST_RUN) {
                 validateRecord();
             }
-            if ((gamesCount % 1_000_000) == 0) {
+            if ((gamesCount % 25_000_000) == 0) {
                 System.out.println(toStringSummary());
 //                System.out.println(toStringVerbose());
             }
@@ -152,11 +162,6 @@ public class GameDriver {
 
         private int score() {
             return active.peek().score;
-        }
-        
-        private int potentialRating() {
-            final Event recent = active.peek();
-            return recent.wallResult.longest + recent.openResult.longest;
         }
 
         private int size() {
@@ -274,15 +279,26 @@ public class GameDriver {
         grind(0);
     }
 
-    private boolean lowPotential(Record record) {
+    private static boolean lowPotential1(final Record record, final Board board) {
+        final TraceWallResult wallResult = board.traceWallPaths(true);
+        final TraceOpenResult openResult = board.traceOpenPaths();
+        final int potentialRating = wallResult.longest + openResult.longest;
         final int move = record.tilesPlayed();
-        return (move + (int)(move / 3)) > record.potentialRating();
+        return (move + (int) (move / 3)) > potentialRating;
+    }
+
+    private static boolean lowPotential2(final Record record, final Board board) {
+        final TraceWallResult wallResult = board.traceWallPaths(true);
+        final TraceOpenResult openResult = board.traceOpenPaths();
+        final int potentialRating = wallResult.longest + openResult.total;
+        final int move = record.tilesPlayed();
+        return (move * 7) > potentialRating;
     }
 
     private void grind(final int startMove) {
         Board board = new Board();
         Record record = new Record(startMove);
-        record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0, board.traceWallPaths(true), board.traceOpenPaths());
+        record.add(Event.Type.Start, board.current.posX, board.current.posY, board.current.nodeMarker, 0, 0, Board.NULL_WALL, Board.NULL_OPEN);
         if (VERBOSE) {
             System.out.println(board.current + " (start)");
         }
@@ -290,8 +306,8 @@ public class GameDriver {
         while (!record.isLastGame()) {
             if (!record.inProgress()) {
                 record.rewind(board);
-                
-                while (lowPotential(record)) {
+
+                while (lowPotential1(record, board)) {
                     record.rewind(board);
                 }
 
@@ -312,13 +328,11 @@ public class GameDriver {
                     System.out.println(playable + " (playing) +" + p);
                 }
 
-                if (record.pathLength() == 0) {
+                if (record.pathLength() == 0 && record.gamesCount == 0) {
                     board.adjacent.tile.setRotation(startMove);
                 }
-                final TraceWallResult wallPaths = board.traceWallPaths(true);
-                final TraceOpenResult openPaths = board.traceOpenPaths();
                 board.play();
-                record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, wallPaths, openPaths);
+                record.add(Event.Type.Play, playable.posX, playable.posY, playable.nodeMarker, playable.tile.getRotation(), record.score() + p, Board.NULL_WALL, Board.NULL_OPEN);
 
                 while (board.adjacent.state == State.Played) {
                     final Space flowable = board.adjacent;
@@ -327,10 +341,10 @@ public class GameDriver {
                         System.out.println(flowable + " (flowing) +" + p);
                     }
                     board.flow();
-                    record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p, wallPaths, openPaths);
+                    record.add(Event.Type.Flow, flowable.posX, flowable.posY, flowable.nodeMarker, flowable.tile.getRotation(), record.score() + p, Board.NULL_WALL, Board.NULL_OPEN);
                 }
             }
-            record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score(), board.traceWallPaths(true), board.traceOpenPaths());
+            record.add(Event.Type.End, board.adjacent.posX, board.adjacent.posY, board.adjacent.nodeMarker, 0, record.score(), Board.NULL_WALL, Board.NULL_OPEN);
 
             if (VERBOSE) {
                 System.out.println(board.adjacent + " (end)");
@@ -344,22 +358,28 @@ public class GameDriver {
                 System.out.println();
             }
         }
+        System.out.println();
+        System.out.println("END Thread " + Thread.currentThread().getName());
     }
 
     private static void multiThreaded() {
-        for (int i = 0; i < 6; i++) {
+        threadCount = 6;
+        for (int i = 0; i < threadCount; i++) {
             final int startMove = i;
-            new Thread() {
+            Thread t = new Thread() {
 
                 @Override
                 public void run() {
                     new GameDriver().grind(startMove);
                 }
-            }.start();
+            };
+            t.setName("GameDriver_" + i);
+            t.start();
         }
     }
 
     private static void singleThread() {
+        threadCount = 1;
         new GameDriver().grind();
     }
 
