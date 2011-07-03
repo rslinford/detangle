@@ -445,7 +445,7 @@ final class Board {
                     if (startNode.equals(n)) {
                         result.gameOver = true;
                     }
-                    assert wn.remove(last);
+                    wn.remove(last);
                     if (VERBOSE) {
                         System.out.println(" (closed)");
                     }
