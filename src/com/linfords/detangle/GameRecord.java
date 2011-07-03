@@ -10,9 +10,9 @@ class GameRecord {
     final String tag;
     final int startMove;
 
-    GameRecord(final int startMove) {
+    GameRecord(final float pfactor, final int startMove) {
         this.startMove = startMove;
-        this.tag = "<T" + startMove + "> ";
+        this.tag = "<T" + startMove + " p" + pfactor + "> ";
     }
 
     void add(final Type type, final int posX, final int posY, final int nodeMarker, final int rotation, final int score) {
@@ -36,7 +36,11 @@ class GameRecord {
     }
 
     String toStringSummary() {
-        return tag + gamesCount + "] " + rotationSequence() + " length(" + pathLength() + ") moves(" + tilesPlayed() + ") score(" + score() + ")";
+        return tag + summaryMarker();
+    }
+    
+    String summaryMarker() {
+        return gamesCount + "] " + rotationSequence() + " length(" + pathLength() + ") moves(" + tilesPlayed() + ") score(" + score() + ")";
     }
 
     boolean inProgress() {
@@ -54,6 +58,11 @@ class GameRecord {
         if (inProgress()) {
             return false;
         }
+        
+        if (multiThreaded && active.size() == 3) { // true when starting move is a dead end
+            return true;
+        }
+        
         for (Event m : active) {
             switch (m.type) {
                 case Play:
@@ -73,9 +82,6 @@ class GameRecord {
     void rewind(Board board) {
         if (GameDriver.TEST_RUN) {
             validateRecord();
-        }
-        if ((gamesCount % 2_000_000_000) == 0) {
-            System.out.println(toStringSummary());
         }
         gamesCount++;
         if (score() > highScore) {

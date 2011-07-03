@@ -112,7 +112,6 @@ final class Board {
     }
 
     void play(Integer rotation) {
-        assert adjacent.state == State.Playable : adjacent.state;
         adjacent.state = State.Played;
         if (rotation != null) {
             adjacent.tile.setRotation(rotation);
@@ -121,7 +120,6 @@ final class Board {
     }
 
     void flow() {
-        assert adjacent.state == State.Played;
         advance();
     }
 
@@ -146,7 +144,6 @@ final class Board {
 
     void putTileBack(final int posX, final int posY) {
         final Space space = board[posX][posY];
-        assert space.state == State.Played : space.state;
         space.state = State.Covered;
         space.tile = null;
         tiles.unpop();
@@ -168,8 +165,6 @@ final class Board {
         adjacent = newAdjacent;
         adjacent.nodeMarker = Tile.adjacentNode(currentMarker);
         adjacent.tile.setRotation(rotation);
-        assert adjacent.state == State.Played : adjacent.state;
-        assert adjacent.tile != null;
         adjacent.state = Space.State.Playable;
     }
 
@@ -330,9 +325,6 @@ final class Board {
         wallNodes.add(new Node(board[6][13], 11));
         wallNodes.add(new Node(board[6][13], 0));
         wallNodes.add(new Node(board[6][13], 1));
-        if (GameDriver.TEST_RUN) {
-            assertWallNodes();
-        }
     }
 
     static class Potential {
@@ -346,10 +338,7 @@ final class Board {
         for (Node node1 = start; (node1.space.state == Space.State.Played)
                 || (includePlayable && node1.space.state == Space.State.Playable);) {
             final Node node2 = node1.connected();
-//            assert !node1.equals(node2);
-//            assert !path.contains(node1);
             path.add(node1);
-//            assert !path.contains(node2);
             path.add(node2);
             node1 = node2.adjacent();
         }
@@ -396,11 +385,9 @@ final class Board {
             final List<Node> path = tracePath(n, true);
             // Don't count dead-end paths
             if (path.get(path.size() - 1).adjacent().space.state == State.Wall) {
-//                System.out.println("Closed: segments(" + path.size() / 2 + ") " + path);
                 continue;
             }
             final int segments = path.size() / 2;
-//            System.out.println("Open: segments(" + segments + ") " + path);
             if (result.longest < segments) {
                 result.longest = segments;
             }
@@ -421,7 +408,6 @@ final class Board {
             return "totalWall(" + totalSegments + ") longestWall(" + longest + ")";
         }
     }
-//    static final TraceWallResult NULL_WALL = new TraceWallResult();
 
     TraceWallResult traceWallPaths(boolean includePlayable) {
         int pathCount = 0;
@@ -469,33 +455,5 @@ final class Board {
             }
         }
         return result;
-    }
-
-    void assertWallNodes() {
-        for (Node wn : wallNodes) {
-            final Space wallSpace = locateAdjacent(wn.space, wn.node);
-            assert wallSpace.state == State.Wall : wn + " adjacent to non-wall:" + wallSpace;
-        }
-    }
-
-    void validateBoard(String tag) {
-        if (VERBOSE) {
-            System.out.println("current: " + current);
-            System.out.println("adjacent: " + adjacent);
-        }
-        int i = 0;
-        for (int x = 0; x < board.length; x++) {
-            for (int y = 0; y < board[x].length; y++) {
-                switch (board[x][y].state) {
-                    case Playable:
-                        i++;
-                        if (VERBOSE) {
-                            System.out.println(i + "] Playable tag(" + tag + ") " + board[x][y]);
-                        }
-                        break;
-                }
-            }
-        }
-        assert i < 2 : i;
     }
 }
