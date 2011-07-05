@@ -14,8 +14,8 @@ public class GameDriver {
 
     final static boolean TEST_RUN = false;
     final static boolean MULTI_THREADED = true;
-    final static float PFACTOR_INITIAL = 1.589f;
-    final static float PFACTOR_INCREMENT = 0.014f;
+    final static float PFACTOR_INITIAL = 1.489f;
+    final static float PFACTOR_INCREMENT = 0.012f;
 
     public static void main(String[] args) {
         // Assert that assertions are enabled.
